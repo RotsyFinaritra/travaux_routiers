@@ -146,5 +146,3 @@ CREATE TABLE IF NOT EXISTS sync_log (
     CONSTRAINT chk_sync_status
         CHECK (status IN ('success', 'error', 'partial'))
 );
-
-test
