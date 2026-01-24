@@ -1,35 +1,35 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+
+import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
+
+
+
+import Inscription from './pages/auth/Inscription';
+import CartePage from './pages/CartePage';
+import ManagerDashboard from './pages/Dashboard';
+import AddSignalement from './pages/signalement/AddSignalement';
+import EditSignalement from './pages/signalement/EditSignalement';
+import SignalementList from './pages/signalement/SignalementList';
+import ManagerCreateUser from './pages/user/ManagerCreateUser';
+import ManagerUnlockUsers from './pages/user/ManagerUnlockUsers';
+import './styles/login.css';
+import LoginPage from './pages/auth/Login';
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <Router>
+      <Routes>
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/inscription" element={<Inscription />} />
+        <Route path="/carte" element={<CartePage />} />
+        <Route path="/creation-utilisateur" element={<ManagerCreateUser />} />
+        <Route path="/debloquer" element={<ManagerUnlockUsers />} />
+        <Route path="/tableau" element={<ManagerDashboard />} />
+        <Route path="/signalements" element={<SignalementList />} />
+        <Route path="/signalements/ajouter" element={<AddSignalement />} />
+        <Route path="/signalements/modifier/:id" element={<EditSignalement />} />
+      </Routes>
+    </Router>
+  );
 }
 
-export default App
+export default App;
