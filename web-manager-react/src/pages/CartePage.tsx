@@ -1,3 +1,4 @@
+import { divIcon } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import React from "react";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
@@ -82,48 +83,74 @@ const CartePage: React.FC = () => {
           <div id="map" style={{ height: 700, borderRadius: 15, boxShadow: "0 10px 40px rgba(0,0,0,0.3)", border: "3px solid white" }}>
             <MapContainer center={[-18.8792, 47.5079] as [number, number]} zoom={13} style={{ height: "100%", width: "100%" }}>
               <TileLayer
-                url="http://localhost:8082/data/osm-2020-02-10-v3.11_madagascar_antananarivo/{z}/{x}/{y}.png"
+                url="http://localhost:8082/styles/basic-preview/{z}/{x}/{y}.png"
                 attribution="© OpenStreetMap contributors"
                 maxZoom={19}
               />
-              {signalements.map((s) => (
-                <Marker key={s.id} position={[s.latitude, s.longitude]}>
-                  <Popup>
-                    <div className="custom-popup">
-                      <div className="popup-header">📍 Signalement #{s.id}</div>
-                      <div className="popup-content">
-                        <div className="popup-row">
-                          <span className="popup-label">📅 Date:</span>
-                          <span className="popup-value">{s.date_signalement}</span>
+              {signalements.map((s) => {
+                const statusKey = s.status ? s.status.toLowerCase().replace(/\s+/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '') : '';
+                const colorMap: Record<string, string> = {
+                  nouveau: '#ff4444',
+                  encours: '#ff9800',
+                  termine: '#4caf50',
+                };
+                const color = colorMap[statusKey] || '#ff4444';
+
+                // SVG pin with dynamic fill color
+                const svg = `
+                  <svg width="30" height="42" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="${color}" stroke="#222" stroke-width="1" />
+                    <circle cx="12" cy="9" r="2.5" fill="#fff" />
+                  </svg>
+                `;
+
+                const icon = divIcon({
+                  html: svg,
+                  className: '',
+                  iconSize: [30, 42],
+                  iconAnchor: [15, 42],
+                  popupAnchor: [0, -40],
+                });
+
+                return (
+                  <Marker key={s.id} position={[s.latitude, s.longitude]} icon={icon}>
+                    <Popup>
+                      <div className="custom-popup">
+                        <div className="popup-header">📍 Signalement #{s.id}</div>
+                        <div className="popup-content">
+                          <div className="popup-row">
+                            <span className="popup-label">📅 Date:</span>
+                            <span className="popup-value">{s.date_signalement}</span>
+                          </div>
+                          <div className="popup-row">
+                            <span className="popup-label">✅ Statut:</span>
+                            <span className="popup-value">{s.status}</span>
+                          </div>
+                          <div className="popup-row">
+                            <span className="popup-label">📏 Surface:</span>
+                            <span className="popup-value">{s.surface_m2} m²</span>
+                          </div>
+                          <div className="popup-row">
+                            <span className="popup-label">💰 Budget:</span>
+                            <span className="popup-value">{s.budget} MGA</span>
+                          </div>
+                          <div className="popup-row">
+                            <span className="popup-label">🏢 Entreprise:</span>
+                            <span className="popup-value">{s.entreprise || "Non attribuée"}</span>
+                          </div>
+                          <div className="popup-row">
+                            <span className="popup-label">📝 Description:</span>
+                            <span className="popup-value">{s.description}</span>
+                          </div>
+                          {s.photo_url && (
+                            <img src={s.photo_url} alt="Photo du signalement" className="popup-photo" />
+                          )}
                         </div>
-                        <div className="popup-row">
-                          <span className="popup-label">✅ Statut:</span>
-                          <span className="popup-value">{s.status}</span>
-                        </div>
-                        <div className="popup-row">
-                          <span className="popup-label">📏 Surface:</span>
-                          <span className="popup-value">{s.surface_m2} m²</span>
-                        </div>
-                        <div className="popup-row">
-                          <span className="popup-label">💰 Budget:</span>
-                          <span className="popup-value">{s.budget} MGA</span>
-                        </div>
-                        <div className="popup-row">
-                          <span className="popup-label">🏢 Entreprise:</span>
-                          <span className="popup-value">{s.entreprise || "Non attribuée"}</span>
-                        </div>
-                        <div className="popup-row">
-                          <span className="popup-label">📝 Description:</span>
-                          <span className="popup-value">{s.description}</span>
-                        </div>
-                        {s.photo_url && (
-                          <img src={s.photo_url} alt="Photo du signalement" className="popup-photo" />
-                        )}
                       </div>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
+                    </Popup>
+                  </Marker>
+                );
+              })}
             </MapContainer>
           </div>
           <div className="legend">
