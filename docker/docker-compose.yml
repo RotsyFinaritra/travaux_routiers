@@ -43,11 +43,15 @@ services:
       timeout: 5s
       retries: 5
     environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /app/secrets/firebase-service-account.json
+      USE_FIREBASE: ${USE_FIREBASE}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
       SPRING_DATASOURCE_URL: jdbc:postgresql://db-local:5432/signalements
       SPRING_DATASOURCE_USERNAME: signal_user
       SPRING_DATASOURCE_PASSWORD: signal_pass
       TILESERVER_URL: http://tileserver:8080
     volumes:
+      - ../target/travaux-routiers-0.0.1-SNAPSHOT.jar:/app/app.jar
       - ../logs:/app/logs  # Optionnel pour logs
       - ../secrets/firebase-service-account.json:/app/secrets/firebase-service-account.json:ro
 
