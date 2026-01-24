@@ -8,9 +8,8 @@ try {
 
     $composeFile = "docker/docker-compose.yml"
 
-    mvn clean package -DskipTests
-
-    docker compose -f $composeFile --env-file .env up -d
+    mvn -DskipTests package
+    docker compose -f docker/docker-compose.yml --env-file .env up -d --no-deps --build app-java
 
     Write-Host "Done. Use 'docker compose ps' to check status."
 }
