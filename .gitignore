@@ -1,0 +1,53 @@
+
+# Maven / build
+target/
+.mvn
+
+# Package files
+*.jar
+*.war
+*.ear
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# Eclipse
+/.settings/
+/.classpath
+/.project
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+/logs/
+*.log
+hs_err_pid*
+
+# Environment files / secrets
+.env
+/secrets/
+/secrets/**
+
+# Database / runtime files
+*.h2.db
+*.mv.db
+
+# Test / coverage
+jacoco.exec
+coverage/
+
+# Docker
+docker/.env
+
+# Temporary files
+*.tmp
+*.temp
+~*
+
+# Others
+node_modules/
+dist/
