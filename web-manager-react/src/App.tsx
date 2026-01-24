@@ -11,8 +11,11 @@ import EditSignalement from './pages/signalement/EditSignalement';
 import SignalementList from './pages/signalement/SignalementList';
 import ManagerCreateUser from './pages/user/ManagerCreateUser';
 import ManagerUnlockUsers from './pages/user/ManagerUnlockUsers';
-import './styles/login.css';
+
 import LoginPage from './pages/auth/Login';
+import EditManagerProfile from './pages/manager/EditManagerProfile';
+import ManagerProfile from './pages/manager/ManagerProfile';
+import './styles/login.css';
 
 function App() {
   return (
@@ -27,6 +30,8 @@ function App() {
         <Route path="/signalements" element={<SignalementList />} />
         <Route path="/signalements/ajouter" element={<AddSignalement />} />
         <Route path="/signalements/modifier/:id" element={<EditSignalement />} />
+        <Route path="/manager" element={<ManagerProfile />} />
+        <Route path="/manager/edit" element={<EditManagerProfile />} />
       </Routes>
     </Router>
   );

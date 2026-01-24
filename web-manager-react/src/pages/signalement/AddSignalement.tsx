@@ -1,8 +1,21 @@
+import "leaflet/dist/leaflet.css";
 import React from "react";
+import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
 import Sidebar from "../../components/Sidebar";
 import "../../styles/addSignalement.css";
 
 const AddSignalement: React.FC = () => {
+  const [position, setPosition] = React.useState<[number, number] | null>(null);
+
+  function LocationMarker() {
+    useMapEvents({
+      click(e) {
+        setPosition([e.latlng.lat, e.latlng.lng]);
+      },
+    });
+    return position ? <Marker position={position} /> : null;
+  }
+
   return (
     <div style={{ display: "flex" }}>
       <Sidebar />
@@ -33,7 +46,7 @@ const AddSignalement: React.FC = () => {
                 <li>Une photo permet un traitement plus rapide du signalement</li>
               </ul>
             </div>
-            <form id="signalementForm">
+            <form id="signalementForm" onReset={() => setPosition(null)}>
               <div className="form-group full-width">
                 <label htmlFor="description">
                   Description du problème <span className="required">*</span>
@@ -49,14 +62,14 @@ const AddSignalement: React.FC = () => {
               <div className="form-group full-width">
                 <label>Localisation <span className="required">*</span></label>
                 <div className="input-hint">Cliquez sur la carte pour sélectionner l'emplacement du signalement</div>
-                <div className="map-container" style={{ height: 400, background: "#e0e0e0", borderRadius: 10, marginTop: 10 }}>
-                  {/* Carte Leaflet à intégrer ici */}
-                  <div style={{ textAlign: "center", color: "#888", paddingTop: 180 }}>
-                    (Carte interactive ici)
-                  </div>
+                <div className="map-container" style={{ height: 400, borderRadius: 10, marginTop: 10 }}>
+                  <MapContainer center={[-18.8792, 47.5079]} zoom={13} style={{ height: "100%", width: "100%" }}>
+                    <TileLayer url="http://localhost:8082/styles/basic-preview/{z}/{x}/{y}.png" attribution="© OpenStreetMap contributors" />
+                    <LocationMarker />
+                  </MapContainer>
                 </div>
                 <div className="coordinates-display" id="coordinatesDisplay">
-                  📍 Aucune localisation sélectionnée
+                  {position ? `📍 Lat: ${position[0].toFixed(6)} — Lng: ${position[1].toFixed(6)}` : "📍 Aucune localisation sélectionnée"}
                 </div>
               </div>
               <div className="form-row">
@@ -72,6 +85,7 @@ const AddSignalement: React.FC = () => {
                     placeholder="Ex: -18.8792"
                     required
                     readOnly
+                    value={position ? position[0] : ''}
                   />
                 </div>
                 <div className="form-group">
@@ -86,6 +100,7 @@ const AddSignalement: React.FC = () => {
                     placeholder="Ex: 47.5079"
                     required
                     readOnly
+                    value={position ? position[1] : ''}
                   />
                 </div>
               </div>

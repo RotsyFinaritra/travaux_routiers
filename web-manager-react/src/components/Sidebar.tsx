@@ -43,7 +43,7 @@ const Sidebar: React.FC = () => {
           </Link>
         </li>
         <li>
-          <Link to="/profil" className={location.pathname === "/profil" ? "active" : ""}>
+          <Link to="/manager" className={location.pathname === "/manager" ? "active" : ""}>
             <span>⚙️</span>
             <span>Mon profil</span>
           </Link>
