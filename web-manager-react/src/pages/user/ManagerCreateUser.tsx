@@ -1,6 +1,6 @@
 import React from "react";
 import Sidebar from "../../components/Sidebar";
-import "../../styles/creationUtilisateur.css";
+import "../../styles/managerUnlockUsers.css";
 
 const ManagerCreateUser: React.FC = () => (
   <div style={{ display: "flex" }}>

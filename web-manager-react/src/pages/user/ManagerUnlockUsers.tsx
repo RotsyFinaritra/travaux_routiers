@@ -1,6 +1,6 @@
 import React from "react";
 import Sidebar from "../../components/Sidebar";
-import "../../styles/debloquerUtilisateur.css";
+import "../../styles/managerUnlockUsers.css";
 
 const ManagerUnlockUsers: React.FC = () => {
   return (

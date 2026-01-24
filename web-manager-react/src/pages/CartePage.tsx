@@ -2,7 +2,7 @@ import "leaflet/dist/leaflet.css";
 import React from "react";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import Sidebar from "../components/Sidebar";
-import "../styles/map.css";
+import "../styles/cartePage.css";
 
 const signalements = [
   {
