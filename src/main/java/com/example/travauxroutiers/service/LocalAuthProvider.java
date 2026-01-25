@@ -67,6 +67,7 @@ public class LocalAuthProvider implements AuthProvider {
         resp.setUserId(user.getId());
         resp.setUsername(user.getUsername());
         resp.setEmail(user.getEmail());
+        resp.setTypeName(user.getTypeUser() != null ? user.getTypeUser().getName() : "USER");
         return resp;
     }
 
@@ -108,6 +109,7 @@ public class LocalAuthProvider implements AuthProvider {
         resp.setUserId(user.getId());
         resp.setUsername(user.getUsername());
         resp.setEmail(user.getEmail());
+        resp.setTypeName(user.getTypeUser() != null ? user.getTypeUser().getName() : "USER");
         return resp;
     }
 
@@ -137,6 +139,7 @@ public class LocalAuthProvider implements AuthProvider {
         resp.setUserId(user.getId());
         resp.setUsername(user.getUsername());
         resp.setEmail(user.getEmail());
+        resp.setTypeName(user.getTypeUser() != null ? user.getTypeUser().getName() : "USER");
         return resp;
     }
 

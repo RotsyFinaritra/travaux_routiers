@@ -84,6 +84,7 @@ public class FirebaseAuthProvider implements AuthProvider {
             resp.setUserId(user.getId());
             resp.setUsername(user.getUsername());
             resp.setEmail(user.getEmail());
+            resp.setTypeName(user.getTypeUser() != null ? user.getTypeUser().getName() : "USER");
         } catch (Exception e) {
             logger.error("Firebase login failed", e);
             resp.setSuccess(false);
@@ -137,6 +138,7 @@ public class FirebaseAuthProvider implements AuthProvider {
         resp.setUserId(user.getId());
         resp.setUsername(user.getUsername());
         resp.setEmail(user.getEmail());
+        resp.setTypeName(user.getTypeUser() != null ? user.getTypeUser().getName() : "USER");
         return resp;
     }
 }
