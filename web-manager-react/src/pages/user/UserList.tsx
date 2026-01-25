@@ -112,7 +112,7 @@ const UserList: React.FC = () => {
             </button>
           </div>
 
-          <div className="table-container">
+          <div className="users-table-container">
             <table className="users-table">
               <thead>
                 <tr>

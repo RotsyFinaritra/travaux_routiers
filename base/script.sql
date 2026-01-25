@@ -146,3 +146,70 @@ CREATE TABLE IF NOT EXISTS sync_log (
     CONSTRAINT chk_sync_status
         CHECK (status IN ('success', 'error', 'partial'))
 );
+
+-- ============================================
+-- TABLES POUR LA VALIDATION ADMINISTRATIVE
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS validation_status (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) UNIQUE NOT NULL,
+    description TEXT
+);
+
+CREATE TABLE IF NOT EXISTS validation (
+    id SERIAL PRIMARY KEY,
+    signalement_id INT UNIQUE NOT NULL,
+    validation_status_id INT NOT NULL,
+    validated_by INT,
+    validated_at TIMESTAMP,
+    note TEXT,
+
+    CONSTRAINT fk_validation_signalement
+        FOREIGN KEY (signalement_id)
+        REFERENCES signalement(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_validation_status
+        FOREIGN KEY (validation_status_id)
+        REFERENCES validation_status(id),
+
+    CONSTRAINT fk_validation_user
+        FOREIGN KEY (validated_by)
+        REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS validation_history (
+    id SERIAL PRIMARY KEY,
+    validation_id INT NOT NULL,
+    changed_by INT,
+    changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    from_status_id INT,
+    to_status_id INT,
+    note TEXT,
+
+    CONSTRAINT fk_vh_validation
+        FOREIGN KEY (validation_id)
+        REFERENCES validation(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_vh_changed_by
+        FOREIGN KEY (changed_by)
+        REFERENCES users(id),
+
+    CONSTRAINT fk_vh_from_status
+        FOREIGN KEY (from_status_id)
+        REFERENCES validation_status(id),
+
+    CONSTRAINT fk_vh_to_status
+        FOREIGN KEY (to_status_id)
+        REFERENCES validation_status(id)
+);
+
+-- Insert initial validation statuses (idempotent)
+INSERT INTO validation_status (name, description)
+VALUES
+  ('PENDING', 'En attente de validation'),
+  ('APPROVED', 'Validation acceptée'),
+  ('REJECTED', 'Validation rejetée')
+ON CONFLICT (name) DO NOTHING;

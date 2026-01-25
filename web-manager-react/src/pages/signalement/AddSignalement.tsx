@@ -1,19 +1,52 @@
-import "leaflet/dist/leaflet.css";
 import React from "react";
-import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
 import Sidebar from "../../components/Sidebar";
 import "../../styles/addSignalement.css";
+import { useNavigate } from "react-router-dom";
+import SignalementForm, { type SignalementFormValues } from "../../components/SignalementForm";
+import { loadAuthUser } from "../../services/authApi";
+import { createSignalement } from "../../services/signalementsApi";
 
 const AddSignalement: React.FC = () => {
-  const [position, setPosition] = React.useState<[number, number] | null>(null);
+  const navigate = useNavigate();
+  const [submitting, setSubmitting] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [success, setSuccess] = React.useState<string | null>(null);
 
-  function LocationMarker() {
-    useMapEvents({
-      click(e) {
-        setPosition([e.latlng.lat, e.latlng.lng]);
-      },
-    });
-    return position ? <Marker position={position} /> : null;
+  async function handleFormSubmit(values: SignalementFormValues) {
+    setError(null);
+    setSuccess(null);
+    setSubmitting(true);
+    try {
+      const cached = loadAuthUser();
+      const userId = cached?.userId;
+      if (!userId) {
+        setError("Vous devez être connecté pour créer un signalement.");
+        setSubmitting(false);
+        return;
+      }
+
+      const resp = await createSignalement({
+        userId,
+        statusId: values.statusId,
+        entrepriseId: values.entrepriseId ?? null,
+        latitude: values.latitude,
+        longitude: values.longitude,
+        description: values.description,
+        surfaceArea: values.surfaceArea,
+        budget: values.budget ?? null,
+      });
+
+      setSubmitting(false);
+      if (!resp.success) {
+        setError(resp.message);
+        return;
+      }
+      setSuccess("Le signalement a été créé avec succès.");
+      setTimeout(() => navigate("/signalements"), 600);
+    } catch (err) {
+      setSubmitting(false);
+      setError(err instanceof Error ? err.message : String(err));
+    }
   }
 
   return (
@@ -27,13 +60,17 @@ const AddSignalement: React.FC = () => {
             <span className="role-badge">🔑 UTILISATEUR</span>
           </header>
 
-          <div className="alert alert-success" id="alertSuccess" style={{ display: "none" }}>
-            ✅ <strong>Succès!</strong> Le signalement a été créé avec succès.
-          </div>
+          {success ? (
+            <div className="alert alert-success">
+              ✅ <strong>Succès!</strong> {success}
+            </div>
+          ) : null}
 
-          <div className="alert alert-error" id="alertError" style={{ display: "none" }}>
-            ❌ <strong>Erreur!</strong> <span id="errorMessage"></span>
-          </div>
+          {error ? (
+            <div className="alert alert-error">
+              ❌ <strong>Erreur!</strong> {error}
+            </div>
+          ) : null}
 
           <div className="form-container">
             <div className="form-title">📝 Informations du Signalement</div>
@@ -46,137 +83,13 @@ const AddSignalement: React.FC = () => {
                 <li>Une photo permet un traitement plus rapide du signalement</li>
               </ul>
             </div>
-            <form id="signalementForm" onReset={() => setPosition(null)}>
-              <div className="form-group full-width">
-                <label htmlFor="description">
-                  Description du problème <span className="required">*</span>
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  placeholder="Décrivez le problème observé (nid-de-poule, fissure, affaissement, etc.)"
-                  required
-                ></textarea>
-                <div className="input-hint">Minimum 20 caractères</div>
-              </div>
-              <div className="form-group full-width">
-                <label>Localisation <span className="required">*</span></label>
-                <div className="input-hint">Cliquez sur la carte pour sélectionner l'emplacement du signalement</div>
-                <div className="map-container" style={{ height: 400, borderRadius: 10, marginTop: 10 }}>
-                  <MapContainer center={[-18.8792, 47.5079]} zoom={13} style={{ height: "100%", width: "100%" }}>
-                    <TileLayer url="http://localhost:8082/styles/basic-preview/{z}/{x}/{y}.png" attribution="© OpenStreetMap contributors" />
-                    <LocationMarker />
-                  </MapContainer>
-                </div>
-                <div className="coordinates-display" id="coordinatesDisplay">
-                  {position ? `📍 Lat: ${position[0].toFixed(6)} — Lng: ${position[1].toFixed(6)}` : "📍 Aucune localisation sélectionnée"}
-                </div>
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="latitude">
-                    Latitude <span className="required">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    id="latitude"
-                    name="latitude"
-                    step="0.000001"
-                    placeholder="Ex: -18.8792"
-                    required
-                    readOnly
-                    value={position ? position[0] : ''}
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="longitude">
-                    Longitude <span className="required">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    id="longitude"
-                    name="longitude"
-                    step="0.000001"
-                    placeholder="Ex: 47.5079"
-                    required
-                    readOnly
-                    value={position ? position[1] : ''}
-                  />
-                </div>
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="surface">
-                    Surface affectée (m²) <span className="required">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    id="surface"
-                    name="surface"
-                    step="0.1"
-                    min="0.1"
-                    placeholder="Ex: 2.5"
-                    required
-                  />
-                  <div className="input-hint">Surface estimée en mètres carrés</div>
-                </div>
-                <div className="form-group">
-                  <label htmlFor="status">
-                    Statut <span className="required">*</span>
-                  </label>
-                  <select id="status" name="status" required defaultValue="nouveau">
-                    <option value="nouveau">Nouveau</option>
-                    <option value="en cours">En cours</option>
-                    <option value="terminé">Terminé</option>
-                  </select>
-                </div>
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="budget">Budget estimé (MGA)</label>
-                  <input
-                    type="number"
-                    id="budget"
-                    name="budget"
-                    step="100"
-                    min="0"
-                    placeholder="Ex: 5000"
-                  />
-                  <div className="input-hint">Optionnel - Réservé aux managers</div>
-                </div>
-                <div className="form-group">
-                  <label htmlFor="entreprise">Entreprise assignée</label>
-                  <input
-                    type="text"
-                    id="entreprise"
-                    name="entreprise"
-                    placeholder="Ex: Travaux Publics Tana"
-                  />
-                  <div className="input-hint">Optionnel - Réservé aux managers</div>
-                </div>
-              </div>
-              <div className="form-group full-width">
-                <label htmlFor="photo">Photo du problème</label>
-                <input
-                  type="file"
-                  id="photo"
-                  name="photo"
-                  accept="image/*"
-                />
-                <div className="input-hint">Format accepté: JPG, PNG (max 5MB)</div>
-                <div className="file-preview" id="filePreview" style={{ display: "none" }}>
-                  <img id="previewImage" src="" alt="Aperçu" />
-                </div>
-              </div>
-              <div className="form-actions">
-                <button type="submit" className="btn btn-primary">
-                  ✅ Créer le signalement
-                </button>
-                <button type="reset" className="btn btn-secondary">
-                  🔄 Réinitialiser
-                </button>
-              </div>
-            </form>
+            <SignalementForm
+              submitLabel="✅ Créer le signalement"
+              submitting={submitting}
+              onSubmit={async (values) => {
+                await handleFormSubmit(values);
+              }}
+            />
           </div>
           <div className="nav-links">
             <a href="/carte" className="nav-link">🗺️ Voir la carte</a>
