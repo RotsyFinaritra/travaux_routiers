@@ -19,6 +19,12 @@ export type CreateUserResponse = {
   typeName?: string;
 };
 
+export type UnblockUserResponse = {
+  success: boolean;
+  message?: string;
+  userId?: number;
+};
+
 function messageFromError(error: unknown): string {
   if (error instanceof ApiError) {
     if (typeof error.payload === "string" && error.payload.trim()) return error.payload;
@@ -51,6 +57,24 @@ export async function adminCreateUser(input: CreateUserInput): Promise<CreateUse
         "X-ADMIN-KEY": adminKey,
       },
       data: input,
+    });
+  } catch (error) {
+    return { success: false, message: messageFromError(error) };
+  }
+}
+
+export async function adminUnblockUser(userId: number): Promise<UnblockUserResponse> {
+  const adminKey = getAdminApiKey();
+  if (!adminKey) {
+    return { success: false, message: "VITE_ADMIN_API_KEY manquant (fichier .env)" };
+  }
+
+  try {
+    return await apiFetch<UnblockUserResponse>(`/admin/users/${userId}/unblock`, {
+      method: "POST",
+      headers: {
+        "X-ADMIN-KEY": adminKey,
+      },
     });
   } catch (error) {
     return { success: false, message: messageFromError(error) };

@@ -68,6 +68,15 @@ public class FirebaseAuthProvider implements AuthProvider {
                 return userRepository.save(u);
             });
 
+            // Enforce local block status (if an admin blocked the account)
+            if (Boolean.TRUE.equals(user.getIsBlocked())) {
+                resp.setSuccess(false);
+                resp.setMessage("account-blocked");
+                resp.setBlocked(true);
+                resp.setRemainingAttempts(0);
+                return resp;
+            }
+
             // if existing and claim present, ensure type matches
             if (roleName != null) {
                 TypeUser wanted = getOrCreateTypeByName(roleName);
