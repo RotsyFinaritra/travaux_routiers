@@ -207,3 +207,23 @@ export async function register(input: RegisterInput): Promise<AuthResponse> {
     return { success: false, message: messageFromError(error) };
   }
 }
+
+/**
+ * Fetch current user info from the backend.
+ * Uses Authorization header from apiClient interceptor (Firebase ID token or local JWT).
+ */
+export async function fetchMe(): Promise<AuthResponse> {
+  try {
+    const resp = await apiFetch<AuthResponse>("/auth/me", { method: "GET" });
+    // Keep local cache in sync when possible.
+    if (resp.success) {
+      const cached = loadAuthUser();
+      if (cached && resp.userId && cached.userId === resp.userId) {
+        saveAuthUser({ ...cached, ...resp });
+      }
+    }
+    return resp;
+  } catch (error) {
+    return { success: false, message: messageFromError(error) };
+  }
+}

@@ -43,6 +43,9 @@ public class Signalement {
     @Column(name = "photo_url", length = 255)
     private String photoUrl;
 
+    @OneToOne(mappedBy = "signalement", cascade = CascadeType.ALL)
+    private Validation validation;
+
     // ...getters/setters...
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -66,4 +69,9 @@ public class Signalement {
     public void setBudget(BigDecimal budget) { this.budget = budget; }
     public String getPhotoUrl() { return photoUrl; }
     public void setPhotoUrl(String photoUrl) { this.photoUrl = photoUrl; }
+
+    
+
+    public Validation getValidation() { return validation; }
+    public void setValidation(Validation validation) { this.validation = validation; }
 }

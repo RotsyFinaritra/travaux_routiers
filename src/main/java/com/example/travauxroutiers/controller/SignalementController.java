@@ -16,7 +16,17 @@ public class SignalementController {
     public SignalementController(SignalementService service) { this.service = service; }
 
     @GetMapping
-    public List<Signalement> list() { return service.listAll(); }
+    public List<Signalement> list(@RequestParam(value = "validationStatus", required = false) String validationStatus) {
+        if (validationStatus != null && !validationStatus.trim().isEmpty()) {
+            return service.listByValidationStatusName(validationStatus);
+        }
+        return service.listAll();
+    }
+
+    @GetMapping("/pending-validation")
+    public List<Signalement> pendingValidation() {
+        return service.listByValidationStatusName("PENDING");
+    }
 
     @GetMapping("/{id}")
     public ResponseEntity<Signalement> get(@PathVariable Long id) { return service.get(id).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build()); }

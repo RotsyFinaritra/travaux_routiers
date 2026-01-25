@@ -2,8 +2,58 @@ import React from "react";
 import { Link } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
 import "../../styles/signalementList.css";
+import { deleteSignalement, listSignalements, type SignalementDto } from "../../services/signalementsApi";
+
+function badgeClassForStatusName(name: string | undefined | null): string {
+  const v = (name ?? "").toLowerCase().trim();
+  if (!v) return "badge";
+  if (v.includes("nouveau")) return "badge badge-nouveau";
+  if (v.includes("en cours") || v.includes("encours") || v.includes("en_cours")) return "badge badge-encours";
+  if (v.includes("termin") || v.includes("fini") || v.includes("clot")) return "badge badge-termine";
+  return "badge";
+}
+
+function formatDate(value: string | undefined): string {
+  if (!value) return "-";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleDateString("fr-FR");
+}
 
 const SignalementList: React.FC = () => {
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const [items, setItems] = React.useState<SignalementDto[]>([]);
+
+  const refresh = React.useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    const resp = await listSignalements();
+    if (!resp.success) {
+      setError(resp.message);
+      setItems([]);
+      setLoading(false);
+      return;
+    }
+    setItems(resp.signalements);
+    setLoading(false);
+  }, []);
+
+  React.useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  async function onDelete(id: number) {
+    const ok = window.confirm("Supprimer ce signalement ?");
+    if (!ok) return;
+    const resp = await deleteSignalement(id);
+    if (!resp.success) {
+      window.alert(resp.message);
+      return;
+    }
+    void refresh();
+  }
+
   return (
     <div style={{ display: "flex" }}>
       <Sidebar />
@@ -37,49 +87,53 @@ const SignalementList: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {/* Exemple de lignes statiques */}
-                <tr>
-                  <td>1</td>
-                  <td>Nid-de-poule sur la chaussée</td>
-                  <td>-18.8792, 47.5079</td>
-                  <td>2.5</td>
-                  <td><span className="badge badge-nouveau">Nouveau</span></td>
-                  <td>5000</td>
-                  <td>Travaux Publics Tana</td>
-                  <td>24/01/2026</td>
-                  <td>
-                    <Link to="/signalements/modifier/1" className="btn-action btn-edit">✏️ Modifier</Link>
-                    <button className="btn-action btn-delete">🗑️ Supprimer</button>
-                  </td>
-                </tr>
-                <tr>
-                  <td>2</td>
-                  <td>Affaissement du trottoir</td>
-                  <td>-18.8800, 47.5080</td>
-                  <td>1.2</td>
-                  <td><span className="badge badge-encours">En cours</span></td>
-                  <td>3000</td>
-                  <td>Entreprise X</td>
-                  <td>23/01/2026</td>
-                  <td>
-                    <Link to="/signalements/modifier/2" className="btn-action btn-edit">✏️ Modifier</Link>
-                    <button className="btn-action btn-delete">🗑️ Supprimer</button>
-                  </td>
-                </tr>
-                <tr>
-                  <td>3</td>
-                  <td>Fissure importante</td>
-                  <td>-18.8810, 47.5090</td>
-                  <td>0.8</td>
-                  <td><span className="badge badge-termine">Terminé</span></td>
-                  <td>0</td>
-                  <td>-</td>
-                  <td>22/01/2026</td>
-                  <td>
-                    <Link to="/signalements/modifier/3" className="btn-action btn-edit">✏️ Modifier</Link>
-                    <button className="btn-action btn-delete">🗑️ Supprimer</button>
-                  </td>
-                </tr>
+                {loading ? (
+                  <tr>
+                    <td colSpan={9} style={{ padding: 20 }}>
+                      Chargement...
+                    </td>
+                  </tr>
+                ) : error ? (
+                  <tr>
+                    <td colSpan={9} style={{ padding: 20, color: "#e74c3c" }}>
+                      {error}
+                    </td>
+                  </tr>
+                ) : items.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} style={{ padding: 20 }}>
+                      Aucun signalement.
+                    </td>
+                  </tr>
+                ) : (
+                  items.map((s) => (
+                    <tr key={s.id}>
+                      <td>{s.id}</td>
+                      <td>{s.description}</td>
+                      <td>
+                        {typeof s.latitude === "number" ? s.latitude.toFixed(6) : s.latitude}, {" "}
+                        {typeof s.longitude === "number" ? s.longitude.toFixed(6) : s.longitude}
+                      </td>
+                      <td>{s.surfaceArea ?? "-"}</td>
+                      <td>
+                        <span className={badgeClassForStatusName(s.status?.name)}>
+                          {s.status?.name ?? "-"}
+                        </span>
+                      </td>
+                      <td>{s.budget ?? "-"}</td>
+                      <td>{s.entreprise?.name ?? "-"}</td>
+                      <td>{formatDate(s.dateSignalement)}</td>
+                      <td>
+                        <Link to={`/signalements/modifier/${s.id}`} className="btn-action btn-edit">
+                          ✏️ Modifier
+                        </Link>
+                        <button className="btn-action btn-delete" onClick={() => void onDelete(s.id)}>
+                          🗑️ Supprimer
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

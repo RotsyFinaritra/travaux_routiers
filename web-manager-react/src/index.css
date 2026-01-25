@@ -14,26 +14,19 @@ body {
   overflow-x: hidden;
 }
 
+:root {
+  --sidebar-width: 240px;
+  --sidebar-width-mobile: 200px;
+}
+
 /* Layout base: app with sidebar + main content */
 .app-layout {
   display: flex;
   min-height: 100vh;
 }
 
-.sidebar {
-  width: 260px;
-  background-color: #667eea;
-  color: white;
-  padding: 20px 0;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-  position: fixed;
-  height: 100vh;
-  overflow-y: auto;
-  z-index: 1000;
-}
-
 .main-content {
-  margin-left: 260px;
+  margin-left: var(--sidebar-width);
   flex: 1;
   padding: 20px;
   min-height: 100vh;
@@ -41,11 +34,11 @@ body {
 
 /* Responsive sidebar */
 @media (max-width: 768px) {
-  .sidebar {
-    width: 70px;
+  :root {
+    --sidebar-width: var(--sidebar-width-mobile);
   }
   .main-content {
-    margin-left: 70px;
+    margin-left: var(--sidebar-width);
   }
 }
 

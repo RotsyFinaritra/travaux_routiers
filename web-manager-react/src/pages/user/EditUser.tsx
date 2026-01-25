@@ -3,58 +3,119 @@ import { useNavigate, useParams } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
 import "../../styles/userList.css";
 
+import { listTypeUsers, type TypeUserDto } from "../../services/typeUsersApi";
+import { getUser, updateUser } from "../../services/usersApi";
+
 const EditUser: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const [formData, setFormData] = useState({
+
+  const userId = Number(id);
+
+  const [formData, setFormData] = useState<{
+    username: string;
+    email: string;
+    typeUserId: number;
+  }>({
     username: "",
     email: "",
-    typeUser: "USER",
+    typeUserId: 0,
   });
 
-  // Simuler le chargement des données utilisateur
+  const [typeUsers, setTypeUsers] = useState<TypeUserDto[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   useEffect(() => {
-    // Ici, vous chargerez les données de l'utilisateur depuis l'API
-    // Pour l'instant, on simule avec des données factices
-    const mockUsers = [
-      {
-        id: 1,
-        username: "jean.rakoto",
-        email: "jean.rakoto@example.mg",
-        typeUser: "USER",
-      },
-      {
-        id: 2,
-        username: "marie.andry",
-        email: "marie.andry@example.mg",
-        typeUser: "USER",
-      },
-    ];
+    let cancelled = false;
+    (async () => {
+      if (!Number.isFinite(userId) || userId <= 0) {
+        setErrorMessage("ID utilisateur invalide");
+        return;
+      }
 
-    const userId = parseInt(id || "0");
-    const user = mockUsers.find(u => u.id === userId);
-    
-    if (user) {
-      setFormData({
-        username: user.username,
-        email: user.email,
-        typeUser: user.typeUser,
-      });
-    }
-  }, [id]);
+      setLoading(true);
+      setErrorMessage(null);
+      try {
+        const [userResp, typeResp] = await Promise.all([getUser(userId), listTypeUsers()]);
+        if (cancelled) return;
 
-  const handleSubmit = (e: React.FormEvent) => {
+        if (!typeResp.success) {
+          setErrorMessage(typeResp.message);
+          return;
+        }
+        setTypeUsers(typeResp.types);
+
+        if (!userResp.success) {
+          setErrorMessage(userResp.message);
+          return;
+        }
+
+        const u = userResp.user;
+        const typeId = u.typeUser?.id ?? 0;
+        setFormData({
+          username: u.username ?? "",
+          email: u.email ?? "",
+          typeUserId: typeId,
+        });
+
+        if (!typeId) {
+          const maybeUser = typeResp.types.find((t) => String(t.name).toUpperCase() === "USER");
+          if (maybeUser) {
+            setFormData((prev) => ({ ...prev, typeUserId: maybeUser.id }));
+          }
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Modifier utilisateur ID:", id, "Données:", formData);
-    // Logique de modification à implémenter
-    // navigate("/utilisateurs"); // Rediriger après modification
+
+    if (!Number.isFinite(userId) || userId <= 0) {
+      setErrorMessage("ID utilisateur invalide");
+      return;
+    }
+    if (!formData.typeUserId) {
+      setErrorMessage("Veuillez sélectionner un type d'utilisateur");
+      return;
+    }
+
+    setSaving(true);
+    setErrorMessage(null);
+    try {
+      const typeName = typeUsers.find((t) => t.id === formData.typeUserId)?.name;
+      const resp = await updateUser(userId, {
+        username: formData.username,
+        email: formData.email,
+        typeUserId: formData.typeUserId,
+        typeUserName: typeName,
+      });
+
+      if (!resp.success) {
+        setErrorMessage(resp.message);
+        return;
+      }
+
+      navigate("/utilisateurs");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: name === "typeUserId" ? Number(value) : value,
+    }));
   };
 
   return (
@@ -68,6 +129,12 @@ const EditUser: React.FC = () => {
             <span className="role-badge">🔑 MANAGER</span>
           </header>
 
+          {errorMessage && (
+            <div className="alert alert-error is-visible">
+              ❌ <strong>Erreur!</strong> {errorMessage}
+            </div>
+          )}
+
           <div className="form-container">
             <form onSubmit={handleSubmit} className="user-form">
               <div className="form-group">
@@ -80,6 +147,7 @@ const EditUser: React.FC = () => {
                   onChange={handleChange}
                   required
                   placeholder="Ex: jean.rakoto"
+                  disabled={loading || saving}
                 />
               </div>
 
@@ -93,20 +161,28 @@ const EditUser: React.FC = () => {
                   onChange={handleChange}
                   required
                   placeholder="Ex: jean.rakoto@example.mg"
+                  disabled={loading || saving}
                 />
               </div>
 
               <div className="form-group">
-                <label htmlFor="typeUser">Type d'utilisateur *</label>
+                <label htmlFor="typeUserId">Type d'utilisateur *</label>
                 <select
-                  id="typeUser"
-                  name="typeUser"
-                  value={formData.typeUser}
+                  id="typeUserId"
+                  name="typeUserId"
+                  value={formData.typeUserId}
                   onChange={handleChange}
                   required
+                  disabled={loading || saving}
                 >
-                  <option value="USER">Utilisateur</option>
-                  <option value="MANAGER">Manager</option>
+                  <option value={0} disabled>
+                    {loading ? "Chargement..." : "-- Choisir --"}
+                  </option>
+                  {typeUsers.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -115,11 +191,12 @@ const EditUser: React.FC = () => {
                   type="button"
                   className="btn-cancel"
                   onClick={() => navigate("/utilisateurs")}
+                  disabled={saving}
                 >
                   ❌ Annuler
                 </button>
-                <button type="submit" className="btn-update">
-                  ✅ Mettre à jour
+                <button type="submit" className="btn-update" disabled={loading || saving}>
+                  {saving ? "⏳ Mise à jour..." : "✅ Mettre à jour"}
                 </button>
               </div>
             </form>

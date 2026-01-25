@@ -17,42 +17,11 @@ import UserList from './pages/user/UserList';
 import LoginPage from './pages/auth/Login';
 import EditManagerProfile from './pages/manager/EditManagerProfile';
 import ManagerProfile from './pages/manager/ManagerProfile';
+import ValidationQueue from './pages/manager/ValidationQueue';
 import './styles/login.css';
 
-import { type ReactElement } from 'react';
-
-function RequireManager({ children }: { children: ReactElement }) {
-  // Vérification temporairement commentée pour le développement
-  // const [isAllowed, setIsAllowed] = useState<boolean | null>(null);
-
-  // useEffect(() => {
-  //   try {
-  //     const raw = localStorage.getItem("travaux.auth.user");
-  //     if (!raw) {
-  //       setIsAllowed(false);
-  //       return;
-  //     }
-  //     const parsed = JSON.parse(raw) as { role?: string } | null;
-  //     if (!parsed || !parsed.role || parsed.role.toUpperCase() !== "MANAGER") {
-  //       setIsAllowed(false);
-  //       return;
-  //     }
-  //     setIsAllowed(true);
-  //   } catch {
-  //     setIsAllowed(false);
-  //   }
-  // }, []);
-
-  // if (isAllowed === null) {
-  //   return null;
-  // }
-
-  // if (!isAllowed) {
-  //   return <Navigate to="/" replace />;
-  // }
-
-  return children;
-}
+import RequireAuth from './components/RequireAuth';
+import RequireRole from './components/RequireRole';
 
 function App() {
   return (
@@ -62,15 +31,16 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/inscription" element={<Inscription />} />
         <Route path="/carte" element={<CartePage />} />
-        <Route path="/utilisateurs" element={<RequireManager><UserList /></RequireManager>} />
-        <Route path="/utilisateurs/creer" element={<RequireManager><CreateUser /></RequireManager>} />
-        <Route path="/utilisateurs/modifier/:id" element={<RequireManager><EditUser /></RequireManager>} />
-        <Route path="/tableau" element={<RequireManager><ManagerDashboard /></RequireManager>} />
-        <Route path="/signalements" element={<RequireManager><SignalementList /></RequireManager>} />
-        <Route path="/signalements/ajouter" element={<RequireManager><AddSignalement /></RequireManager>} />
-        <Route path="/signalements/modifier/:id" element={<RequireManager><EditSignalement /></RequireManager>} />
-        <Route path="/manager" element={<RequireManager><ManagerProfile /></RequireManager>} />
-        <Route path="/manager/edit" element={<RequireManager><EditManagerProfile /></RequireManager>} />
+        <Route path="/utilisateurs" element={<RequireRole allowed={["MANAGER"]}><UserList /></RequireRole>} />
+        <Route path="/utilisateurs/creer" element={<RequireRole allowed={["MANAGER"]}><CreateUser /></RequireRole>} />
+        <Route path="/utilisateurs/modifier/:id" element={<RequireRole allowed={["MANAGER"]}><EditUser /></RequireRole>} />
+        <Route path="/tableau" element={<RequireRole allowed={["MANAGER"]}><ManagerDashboard /></RequireRole>} />
+        <Route path="/signalements" element={<RequireAuth><SignalementList /></RequireAuth>} />
+        <Route path="/signalements/ajouter" element={<RequireAuth><AddSignalement /></RequireAuth>} />
+        <Route path="/signalements/modifier/:id" element={<RequireAuth><EditSignalement /></RequireAuth>} />
+        <Route path="/manager" element={<RequireRole allowed={["MANAGER"]}><ManagerProfile /></RequireRole>} />
+        <Route path="/manager/edit" element={<RequireRole allowed={["MANAGER"]}><EditManagerProfile /></RequireRole>} />
+        <Route path="/manager/validations" element={<RequireRole allowed={["MANAGER"]}><ValidationQueue /></RequireRole>} />
       </Routes>
     </Router>
   );

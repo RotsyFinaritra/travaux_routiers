@@ -20,7 +20,9 @@ const LoginPage: React.FC = () => {
         setError(resp.message ?? "Connexion échouée");
         return;
       }
-      navigate("/tableau");
+      const role = (resp.typeName ?? "").toUpperCase();
+      const target = role === "MANAGER" ? "/tableau" : "/signalements";
+      navigate(target);
     } finally {
       setLoading(false);
     }
