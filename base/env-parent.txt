@@ -1,0 +1,37 @@
+# Environment variables for Docker / Spring Boot
+# DO NOT commit this file to Git - it contains secrets
+
+# Database (Postgres container)
+SPRING_DATASOURCE_URL=jdbc:postgresql://db-local:5432/signalements
+SPRING_DATASOURCE_USERNAME=signal_user
+SPRING_DATASOURCE_PASSWORD=signal_pass
+SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.PostgreSQLDialect
+
+# App mode
+USE_FIREBASE=true            # true -> tenter Firebase, false -> forcer Postgres
+SPRING_PROFILES_ACTIVE=cloud # local ou cloud
+
+# Firebase service account (chemin dans le conteneur)
+GOOGLE_APPLICATION_CREDENTIALS=/app/secrets/firebase-service-account.json
+
+
+# Server and logging
+SERVER_PORT=8080
+LOGS_PATH=/app/logs
+
+# Actuator / management
+MANAGEMENT_ENDPOINTS_INCLUDE=health,info
+MANAGEMENT_HEALTH_SHOW_DETAILS=when_authorized
+
+# Disable H2 console in Docker environment
+ENABLE_H2_CONSOLE=false
+
+# Optional: tileserver / other services
+TILESERVER_URL=http://tileserver:8080
+
+# Project name used by Docker Compose (changes container name prefixes)
+COMPOSE_PROJECT_NAME=travaux
+
+# hamoronana user avec role manager
+ADMIN_API_KEY=KmFN8wzpxkL9fp4m+i/4sEgttJedflhLykAcAxo44T0=
