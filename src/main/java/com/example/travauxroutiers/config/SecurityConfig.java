@@ -37,9 +37,13 @@ public class SecurityConfig {
     // Allow Vite dev server + local tooling and LAN devices for development.
     // Use allowedOriginPatterns for flexible matching during dev.
     config.setAllowedOriginPatterns(List.of(
+        "http://localhost",
         "http://localhost:*",
+        "https://localhost",
         "https://localhost:*",
+        "http://127.0.0.1",
         "http://127.0.0.1:*",
+        "https://127.0.0.1",
         "https://127.0.0.1:*",
         // Capacitor/Ionic WebView origins when not using live reload
         "capacitor://localhost",
