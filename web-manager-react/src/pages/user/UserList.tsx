@@ -1,49 +1,66 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
 import "../../styles/userList.css";
+import { adminUnblockUser } from "../../services/adminApi";
+import { deleteUser, listUsers, type UserDto } from "../../services/usersApi";
 
 const UserList: React.FC = () => {
   const navigate = useNavigate();
-  const [users] = useState([
-    {
-      id: 1,
-      username: "jean.rakoto",
-      email: "jean.rakoto@example.mg",
-      typeUser: "USER",
-      status: "active",
-      lastLogin: "2026-01-20 14:30:00"
-    },
-    {
-      id: 2,
-      username: "marie.andry",
-      email: "marie.andry@example.mg",
-      typeUser: "USER",
-      status: "blocked",
-      lastLogin: "2026-01-15 09:15:00"
-    },
-    {
-      id: 3,
-      username: "paul.manager",
-      email: "paul.manager@example.mg",
-      typeUser: "MANAGER",
-      status: "active",
-      lastLogin: "2026-01-22 11:00:00"
-    },
-    {
-      id: 4,
-      username: "sophie.user",
-      email: "sophie.user@example.mg",
-      typeUser: "USER",
-      status: "blocked",
-      lastLogin: "2026-01-10 16:45:00"
-    }
-  ]);
+  const [users, setUsers] = useState<UserDto[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [actionUserId, setActionUserId] = useState<number | null>(null);
 
-  const handleDelete = (userId: number) => {
-    if (confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ?")) {
-      console.log("Supprimer utilisateur:", userId);
-      // Logique de suppression à implémenter
+  async function refreshUsers() {
+    setLoading(true);
+    setErrorMessage(null);
+    try {
+      const resp = await listUsers();
+      if (!resp.success) {
+        setErrorMessage(resp.message);
+        return;
+      }
+      setUsers(resp.users);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void refreshUsers();
+  }, []);
+
+  const counts = useMemo(() => {
+    const blocked = users.filter((u) => Boolean(u.isBlocked)).length;
+    return {
+      total: users.length,
+      blocked,
+      active: users.length - blocked,
+    };
+  }, [users]);
+
+  function formatDateTime(value: string | null | undefined): string {
+    if (!value) return "-";
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return value;
+    return d.toLocaleString();
+  }
+
+  const handleDelete = async (userId: number) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ?")) return;
+
+    setActionUserId(userId);
+    setErrorMessage(null);
+    try {
+      const resp = await deleteUser(userId);
+      if (!resp.success) {
+        setErrorMessage(resp.message);
+        return;
+      }
+      await refreshUsers();
+    } finally {
+      setActionUserId(null);
     }
   };
 
@@ -51,10 +68,20 @@ const UserList: React.FC = () => {
     navigate(`/utilisateurs/modifier/${userId}`);
   };
 
-  const handleUnlock = (userId: number) => {
-    if (confirm("Êtes-vous sûr de vouloir débloquer cet utilisateur ?")) {
-      console.log("Débloquer utilisateur:", userId);
-      // Logique de déblocage à implémenter
+  const handleUnlock = async (userId: number) => {
+    if (!confirm("Êtes-vous sûr de vouloir débloquer cet utilisateur ?")) return;
+
+    setActionUserId(userId);
+    setErrorMessage(null);
+    try {
+      const resp = await adminUnblockUser(userId);
+      if (!resp.success) {
+        setErrorMessage(resp.message ?? "Erreur lors du déblocage");
+        return;
+      }
+      await refreshUsers();
+    } finally {
+      setActionUserId(null);
     }
   };
 
@@ -72,6 +99,12 @@ const UserList: React.FC = () => {
             <p className="subtitle">Espace Manager - Gestion complète des utilisateurs</p>
             <span className="role-badge">🔑 MANAGER</span>
           </header>
+
+          {errorMessage && (
+            <div className="alert alert-error is-visible">
+              ❌ <strong>Erreur!</strong> {errorMessage}
+            </div>
+          )}
 
           <div className="actions-header">
             <button className="btn-create" onClick={handleCreateUser}>
@@ -93,35 +126,52 @@ const UserList: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {users.map((user) => (
+                {loading ? (
+                  <tr>
+                    <td colSpan={7} style={{ padding: 20 }}>
+                      Chargement...
+                    </td>
+                  </tr>
+                ) : users.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} style={{ padding: 20 }}>
+                      Aucun utilisateur
+                    </td>
+                  </tr>
+                ) : (
+                  users.map((user) => (
                   <tr key={user.id}>
                     <td>{user.id}</td>
                     <td className="username">{user.username}</td>
                     <td className="email">{user.email}</td>
                     <td>
-                      <span className={`type-badge ${user.typeUser.toLowerCase() === 'manager' ? 'type-manager' : 'type-user'}`}>
-                        {user.typeUser}
+                      <span
+                        className={`type-badge ${(user.typeUser?.name ?? "USER").toLowerCase() === "manager" ? "type-manager" : "type-user"}`}
+                      >
+                        {user.typeUser?.name ?? "USER"}
                       </span>
                     </td>
                     <td>
-                      <span className={`status-badge ${user.status === 'active' ? 'status-active' : 'status-blocked'}`}>
-                        {user.status === 'active' ? '✅ Actif' : '🔒 Bloqué'}
+                      <span className={`status-badge ${user.isBlocked ? "status-blocked" : "status-active"}`}>
+                        {user.isBlocked ? "🔒 Bloqué" : "✅ Actif"}
                       </span>
                     </td>
-                    <td className="last-login">{user.lastLogin}</td>
+                    <td className="last-login">{formatDateTime(user.lastLogin)}</td>
                     <td className="actions">
                       <button 
                         className="btn-action btn-edit"
                         onClick={() => handleEdit(user.id)}
                         title="Modifier"
+                        disabled={actionUserId === user.id}
                       >
                         ✏️
                       </button>
-                      {user.status === 'blocked' && (
+                      {user.isBlocked && (
                         <button 
                           className="btn-action btn-unlock"
                           onClick={() => handleUnlock(user.id)}
                           title="Débloquer"
+                          disabled={actionUserId === user.id}
                         >
                           🔓
                         </button>
@@ -130,12 +180,14 @@ const UserList: React.FC = () => {
                         className="btn-action btn-delete"
                         onClick={() => handleDelete(user.id)}
                         title="Supprimer"
+                        disabled={actionUserId === user.id}
                       >
                         🗑️
                       </button>
                     </td>
                   </tr>
-                ))}
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -143,15 +195,15 @@ const UserList: React.FC = () => {
           <div className="summary">
             <div className="summary-item">
               <span className="summary-label">Total utilisateurs:</span>
-              <span className="summary-value">{users.length}</span>
+              <span className="summary-value">{counts.total}</span>
             </div>
             <div className="summary-item">
               <span className="summary-label">Utilisateurs actifs:</span>
-              <span className="summary-value">{users.filter(u => u.status === 'active').length}</span>
+              <span className="summary-value">{counts.active}</span>
             </div>
             <div className="summary-item">
               <span className="summary-label">Utilisateurs bloqués:</span>
-              <span className="summary-value">{users.filter(u => u.status === 'blocked').length}</span>
+              <span className="summary-value">{counts.blocked}</span>
             </div>
           </div>
 

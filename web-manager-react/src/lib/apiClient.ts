@@ -34,14 +34,47 @@ export const apiClient: AxiosInstance = axios.create({
   },
 });
 
-// Optional: attach Firebase ID token automatically when available.
-// If you don't want this behavior, remove this interceptor.
+const LOCAL_AUTH_STORAGE_KEY = "travaux.auth.user";
+
+function getAuthMode(): "firebase" | "local" {
+  const raw = (import.meta.env.VITE_AUTH_MODE as string | undefined)?.toLowerCase();
+  if (raw === "local") return "local";
+  return "firebase";
+}
+
+function getLocalJwt(): string | null {
+  const raw = localStorage.getItem(LOCAL_AUTH_STORAGE_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as { token?: unknown; tokenExp?: unknown };
+    const token = typeof parsed.token === "string" ? parsed.token : null;
+    if (!token) return null;
+    const exp = typeof parsed.tokenExp === "number" ? parsed.tokenExp : null;
+    if (exp && exp * 1000 <= Date.now()) return null;
+    return token;
+  } catch {
+    return null;
+  }
+}
+
+// Attach auth automatically:
+// - firebase mode: use Firebase ID token (if available)
+// - local mode: use backend JWT stored in localStorage
 apiClient.interceptors.request.use(async (config) => {
+  config.headers = config.headers ?? {};
+  if (config.headers.Authorization) return config;
+
+  const mode = getAuthMode();
+  if (mode === "local") {
+    const token = getLocalJwt();
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    return config;
+  }
+
   const user = auth.currentUser;
   if (!user) return config;
 
   const token = await user.getIdToken();
-  config.headers = config.headers ?? {};
   config.headers.Authorization = `Bearer ${token}`;
   return config;
 });

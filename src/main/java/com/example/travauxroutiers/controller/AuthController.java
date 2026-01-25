@@ -5,6 +5,7 @@ import com.example.travauxroutiers.model.User;
 import com.example.travauxroutiers.repository.UserRepository;
 import com.example.travauxroutiers.repository.TypeUserRepository;
 import com.example.travauxroutiers.service.AuthService;
+import com.example.travauxroutiers.service.JwtService;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseToken;
 
@@ -19,11 +20,13 @@ public class AuthController {
     private final AuthService authService;
     private final UserRepository userRepository;
     private final TypeUserRepository typeUserRepository;
+    private final JwtService jwtService;
 
-    public AuthController(AuthService authService, UserRepository userRepository, TypeUserRepository typeUserRepository) {
+    public AuthController(AuthService authService, UserRepository userRepository, TypeUserRepository typeUserRepository, JwtService jwtService) {
         this.authService = authService;
         this.userRepository = userRepository;
         this.typeUserRepository = typeUserRepository;
+        this.jwtService = jwtService;
     }
 
     /**
@@ -65,11 +68,33 @@ public class AuthController {
     ) {
         AuthDtos.AuthResponse resp = new AuthDtos.AuthResponse();
 
-        // Try Authorization Bearer token (Firebase)
+        // Try Authorization Bearer token (Local JWT first, then Firebase)
         if (authorization != null && authorization.toLowerCase().startsWith("bearer ")) {
-            String idToken = authorization.substring(7).trim();
+            String bearer = authorization.substring(7).trim();
+
+            // 1) Local JWT
+            JwtService.JwtClaims claims = jwtService.tryVerify(bearer).orElse(null);
+            if (claims != null && claims.userId() != null) {
+                Optional<User> opt = userRepository.findById(claims.userId());
+                if (opt.isEmpty()) {
+                    resp.setSuccess(false);
+                    resp.setMessage("user-not-found");
+                    return ResponseEntity.status(404).body(resp);
+                }
+                User user = opt.get();
+                resp.setSuccess(true);
+                resp.setMessage("ok");
+                resp.setUserId(user.getId());
+                resp.setUsername(user.getUsername());
+                resp.setEmail(user.getEmail());
+                resp.setTypeName(user.getTypeUser() != null ? user.getTypeUser().getName() : "USER");
+                resp.setBlocked(Boolean.TRUE.equals(user.getIsBlocked()));
+                return ResponseEntity.ok(resp);
+            }
+
+            // 2) Firebase ID token
             try {
-                FirebaseToken decoded = FirebaseAuth.getInstance().verifyIdToken(idToken);
+                FirebaseToken decoded = FirebaseAuth.getInstance().verifyIdToken(bearer);
                 String email = decoded.getEmail();
                 String username = decoded.getUid();
 
@@ -90,6 +115,7 @@ public class AuthController {
                 resp.setUsername(user.getUsername());
                 resp.setEmail(user.getEmail());
                 resp.setTypeName(user.getTypeUser() != null ? user.getTypeUser().getName() : "USER");
+                resp.setBlocked(Boolean.TRUE.equals(user.getIsBlocked()));
                 return ResponseEntity.ok(resp);
             } catch (Exception e) {
                 resp.setSuccess(false);

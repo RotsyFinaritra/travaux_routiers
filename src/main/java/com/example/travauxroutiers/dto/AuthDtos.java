@@ -71,6 +71,14 @@ public class AuthDtos {
         private String username;
         private String email;
         private String typeName;
+        /** Local mode session token (JWT). Present when login/register succeeds in local profile. */
+        private String token;
+        /** JWT expiry (epoch seconds). */
+        private Long tokenExp;
+        /** Whether the account is blocked due to too many failed logins (local profile). */
+        private Boolean blocked;
+        /** Remaining attempts before block (local profile). */
+        private Integer remainingAttempts;
 
         public boolean isSuccess() { return success; }
         public void setSuccess(boolean success) { this.success = success; }
@@ -84,5 +92,14 @@ public class AuthDtos {
         public void setEmail(String email) { this.email = email; }
         public String getTypeName() { return typeName; }
         public void setTypeName(String typeName) { this.typeName = typeName; }
+
+        public String getToken() { return token; }
+        public void setToken(String token) { this.token = token; }
+        public Long getTokenExp() { return tokenExp; }
+        public void setTokenExp(Long tokenExp) { this.tokenExp = tokenExp; }
+        public Boolean getBlocked() { return blocked; }
+        public void setBlocked(Boolean blocked) { this.blocked = blocked; }
+        public Integer getRemainingAttempts() { return remainingAttempts; }
+        public void setRemainingAttempts(Integer remainingAttempts) { this.remainingAttempts = remainingAttempts; }
     }
 }

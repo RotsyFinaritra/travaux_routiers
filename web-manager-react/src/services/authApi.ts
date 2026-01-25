@@ -17,6 +17,10 @@ export type AuthResponse = {
   username?: string;
   email?: string;
   typeName?: string;
+  token?: string;
+  tokenExp?: number;
+  blocked?: boolean;
+  remainingAttempts?: number;
 };
 
 export type LoginInput = {

@@ -146,4 +146,23 @@ public class AdminController {
             return ResponseEntity.ok(Map.of("message", "role-updated", "role", type.getName()));
         }).orElseGet(() -> ResponseEntity.status(404).body(Map.of("message", "user-not-found")));
     }
+
+    @PostMapping("/users/{id}/unblock")
+    public ResponseEntity<?> unblockUser(@RequestHeader(value = "X-ADMIN-KEY", required = false) String adminKey,
+                                         @PathVariable("id") Long userId) {
+        String expected = System.getenv("ADMIN_API_KEY");
+        if (expected == null || expected.isEmpty() || adminKey == null || !adminKey.equals(expected)) {
+            return ResponseEntity.status(403).body(Map.of("message", "forbidden"));
+        }
+
+        return userRepository.findById(userId)
+                .map(user -> {
+                    user.setLoginAttempts(0);
+                    user.setIsBlocked(false);
+                    user.setBlockedAt(null);
+                    userRepository.save(user);
+                    return ResponseEntity.ok(Map.of("success", true, "message", "user-unblocked", "userId", user.getId()));
+                })
+                .orElseGet(() -> ResponseEntity.status(404).body(Map.of("success", false, "message", "user-not-found")));
+    }
 }
