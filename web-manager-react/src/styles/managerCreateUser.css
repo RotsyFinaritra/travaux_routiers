@@ -277,6 +277,10 @@
             animation: slideIn 0.3s;
         }
 
+        .alert.is-visible {
+            display: block;
+        }
+
         @keyframes slideIn {
             from {
                 opacity: 0;
@@ -322,6 +326,34 @@
 
         .info-box li {
             margin: 5px 0;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 13px;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover {
+            border-color: #667eea;
+            transform: translateY(-1px);
         }
 
         @media (max-width: 768px) {
