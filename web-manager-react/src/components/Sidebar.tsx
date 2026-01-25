@@ -1,8 +1,8 @@
 
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import "../styles/sidebar.css";
 import { logout } from "../services/authApi";
+import "../styles/sidebar.css";
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
@@ -40,15 +40,9 @@ const Sidebar: React.FC = () => {
           </Link>
         </li>
         <li>
-          <Link to="/creation-utilisateur" className={location.pathname === "/creation-utilisateur" ? "active" : ""}>
-            <span>➕</span>
-            <span>Créer un utilisateur</span>
-          </Link>
-        </li>
-        <li>
-          <Link to="/debloquer" className={location.pathname === "/debloquer" ? "active" : ""}>
-            <span>🔓</span>
-            <span>Débloquer utilisateurs</span>
+          <Link to="/utilisateurs" className={location.pathname === "/utilisateurs" ? "active" : ""}>
+            <span>👥</span>
+            <span>Utilisateurs</span>
           </Link>
         </li>
         <li>
