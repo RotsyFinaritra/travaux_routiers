@@ -1,8 +1,10 @@
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signOut,
   updateProfile,
 } from "firebase/auth";
+import type { FirebaseError } from "firebase/app";
 import { auth } from "../firebase";
 import { apiFetch, ApiError } from "../lib/apiClient";
 
@@ -54,10 +56,84 @@ export function clearAuthUser(): void {
   localStorage.removeItem(STORAGE_KEY);
 }
 
+/**
+ * Logout current user.
+ * - firebase mode: sign out from Firebase
+ * - always: clear local cached user
+ */
+export async function logout(): Promise<void> {
+  const mode = getAuthMode();
+  clearAuthUser();
+  if (mode === "firebase") {
+    try {
+      await signOut(auth);
+    } catch {
+      // ignore
+    }
+  }
+}
+
 function messageFromError(error: unknown): string {
   if (error instanceof ApiError) {
     if (typeof error.payload === "string" && error.payload.trim()) return error.payload;
+    if (error.payload && typeof error.payload === "object") {
+      const maybe = error.payload as { message?: unknown; error?: unknown };
+      if (typeof maybe.message === "string" && maybe.message.trim()) return maybe.message;
+      if (typeof maybe.error === "string" && maybe.error.trim()) return maybe.error;
+    }
     return error.message;
+  }
+  if (error && typeof error === "object" && "code" in error) {
+    const fb = error as FirebaseError & {
+      customData?: unknown;
+    };
+    const code = fb.code;
+
+    // Firebase Auth sometimes includes a token response with a more explicit message.
+    // Example: { error: { message: "INVALID_PASSWORD" } }
+    const tokenMsg = (() => {
+      const cd = fb.customData;
+      if (!cd || typeof cd !== "object") return null;
+      const anyCd = cd as Record<string, unknown>;
+      const tokenResp = anyCd._tokenResponse;
+      if (!tokenResp || typeof tokenResp !== "object") return null;
+      const anyTr = tokenResp as Record<string, unknown>;
+      const err = anyTr.error;
+      if (!err || typeof err !== "object") return null;
+      const anyErr = err as Record<string, unknown>;
+      return typeof anyErr.message === "string" ? anyErr.message : null;
+    })();
+
+    // Friendly French messages.
+    switch (code) {
+      case "auth/invalid-credential":
+      case "auth/invalid-login-credentials":
+      case "auth/wrong-password":
+      case "auth/user-not-found":
+        return "Email ou mot de passe incorrect";
+      case "auth/invalid-email":
+        return "Adresse email invalide";
+      case "auth/too-many-requests":
+        return "Trop de tentatives. Réessayez plus tard";
+      case "auth/email-already-in-use":
+        return "Cet email est déjà utilisé";
+      case "auth/weak-password":
+        return "Mot de passe trop faible";
+      case "auth/network-request-failed":
+        return "Problème réseau. Vérifiez votre connexion";
+      default:
+        // As a fallback, return token response message if available.
+        if (tokenMsg) {
+          if (tokenMsg === "INVALID_PASSWORD" || tokenMsg === "EMAIL_NOT_FOUND") {
+            return "Email ou mot de passe incorrect";
+          }
+          if (tokenMsg === "INVALID_EMAIL") {
+            return "Adresse email invalide";
+          }
+          return tokenMsg;
+        }
+        break;
+    }
   }
   return error instanceof Error ? error.message : "Erreur inconnue";
 }

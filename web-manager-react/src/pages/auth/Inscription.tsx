@@ -89,12 +89,12 @@ const Inscription: React.FC = () => {
         </div>
         <div className="signup-form">
           {error && (
-            <div className="alert alert-error" role="alert">
+            <div className="alert alert-error signup-alert" role="alert">
               <span>{error}</span>
             </div>
           )}
           {success && (
-            <div className="alert alert-success" role="status">
+            <div className="alert alert-success signup-alert" role="status">
               <span>{success}</span>
             </div>
           )}

@@ -46,15 +46,26 @@ apiClient.interceptors.request.use(async (config) => {
   return config;
 });
 
+function extractMessage(payload: unknown): string | null {
+  if (typeof payload === "string") return payload;
+  if (payload && typeof payload === "object") {
+    const maybe = payload as { message?: unknown; error?: unknown };
+    if (typeof maybe.message === "string" && maybe.message.trim()) return maybe.message;
+    if (typeof maybe.error === "string" && maybe.error.trim()) return maybe.error;
+  }
+  return null;
+}
+
 function toApiError(error: unknown): ApiError {
   if (axios.isAxiosError(error)) {
     const axiosError = error as AxiosError;
     const status = axiosError.response?.status ?? 0;
     const payload = axiosError.response?.data ?? null;
+    const messageFromPayload = extractMessage(payload);
     const message =
-      typeof payload === "string"
-        ? payload
-        : axiosError.message || (status ? `API request failed (${status})` : "API request failed");
+      messageFromPayload ??
+      axiosError.message ??
+      (status ? `API request failed (${status})` : "API request failed");
     return new ApiError(message, status, payload);
   }
 

@@ -1,10 +1,19 @@
 
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import "../styles/sidebar.css";
+import { logout } from "../services/authApi";
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  async function onLogoutClick(event: React.MouseEvent) {
+    event.preventDefault();
+    await logout();
+    navigate("/");
+  }
+
   return (
     <div className="sidebar">
       <div className="sidebar-header">
@@ -50,7 +59,7 @@ const Sidebar: React.FC = () => {
         </li>
       </ul>
       <div className="sidebar-footer">
-        <a href="authentification.html">
+        <a href="#" onClick={onLogoutClick}>
           <span>🚪</span>
           <span>Déconnexion</span>
         </a>

@@ -42,7 +42,7 @@ const LoginPage: React.FC = () => {
           <p>Entrez vos identifiants pour accéder à votre compte</p>
         </div>
         {error && (
-          <div className="alert alert-error" role="alert" style={{ marginBottom: 16 }}>
+          <div className="alert alert-error login-alert" role="alert" style={{ marginBottom: 16 }}>
             {error}
           </div>
         )}

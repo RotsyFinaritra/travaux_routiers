@@ -87,6 +87,14 @@ body {
     color: #c93;
     border: 1px solid #ffc;
 }
+
+/*
+    CSS in other pages can define `.alert { display: none; }`.
+    Ensure login alerts always remain visible when rendered.
+*/
+.login-form .login-alert {
+        display: block;
+}
 .form-group {
     margin-bottom: 25px;
 }
