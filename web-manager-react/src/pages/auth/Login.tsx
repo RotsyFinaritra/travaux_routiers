@@ -1,8 +1,31 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import "../../styles/login.css";
+import { login } from "../../services/authApi";
 
 const LoginPage: React.FC = () => {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function onSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      const resp = await login({ usernameOrEmail: email, password });
+      if (!resp.success) {
+        setError(resp.message ?? "Connexion échouée");
+        return;
+      }
+      navigate("/tableau");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="login-container">
       <div className="login-visual">
@@ -18,7 +41,12 @@ const LoginPage: React.FC = () => {
           <h1>🔐 Connexion</h1>
           <p>Entrez vos identifiants pour accéder à votre compte</p>
         </div>
-        <form>
+        {error && (
+          <div className="alert alert-error" role="alert" style={{ marginBottom: 16 }}>
+            {error}
+          </div>
+        )}
+        <form onSubmit={onSubmit}>
           <div className="form-group">
             <label htmlFor="email">Adresse Email</label>
             <div className="input-wrapper">
@@ -29,6 +57,8 @@ const LoginPage: React.FC = () => {
                 placeholder="votre.email@example.mg"
                 required
                 autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
               <span className="input-icon" role="img" aria-label="Email">📧</span>
             </div>
@@ -43,6 +73,8 @@ const LoginPage: React.FC = () => {
                 placeholder="••••••••"
                 required
                 autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
               <span className="toggle-password" role="img" aria-label="Afficher le mot de passe">👁️</span>
             </div>
@@ -56,8 +88,8 @@ const LoginPage: React.FC = () => {
               Mot de passe oublié ?
             </a>
           </div>
-          <button type="submit" className="btn-login">
-            Se connecter
+          <button type="submit" className="btn-login" disabled={loading}>
+            {loading ? "Connexion…" : "Se connecter"}
           </button>
         </form>
         <div className="divider">
