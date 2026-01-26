@@ -31,4 +31,18 @@ public class FirebaseSyncController {
             return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
         }
     }
+
+    @PostMapping("/sync/signalements/reverse")
+    public ResponseEntity<?> syncLocalToFirebase(@RequestHeader(value = "X-ADMIN-KEY", required = false) String adminKey) {
+        String expected = System.getenv("ADMIN_API_KEY");
+        if (expected == null || expected.isEmpty() || adminKey == null || !adminKey.equals(expected)) {
+            return ResponseEntity.status(403).body(Map.of("message", "forbidden"));
+        }
+
+        try {
+            return ResponseEntity.ok(syncService.syncLocalToFirebase());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
 }

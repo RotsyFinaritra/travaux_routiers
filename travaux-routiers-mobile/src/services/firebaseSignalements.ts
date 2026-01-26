@@ -220,7 +220,9 @@ export async function createFirebaseSignalement(
       localId: null,
     });
 
-    console.log('[firestore] docRef path:', docRef.path);
+    console.log('[firestore] write completed, waiting 3s...');
+    setTimeout(() => console.log('[firestore] check console now'), 3000);
+
 
 
     // Confirm the document exists locally / server-side (helps surface permission issues).
