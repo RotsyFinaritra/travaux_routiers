@@ -89,7 +89,32 @@
               />
             </ion-item>
 
-            <ion-button expand="block" class="ion-margin-top" :disabled="!canSubmit" @click="submit">
+            <ion-item>
+              <ion-label position="stacked">Surface estimée (m²) (optionnel)</ion-label>
+              <ion-input
+                v-model="draft.surfaceAreaText"
+                type="number"
+                inputmode="decimal"
+                placeholder="Ex: 2.5"
+              />
+            </ion-item>
+
+            <ion-item>
+              <ion-label position="stacked">Budget estimé (DA) (optionnel)</ion-label>
+              <ion-input
+                v-model="draft.budgetText"
+                type="number"
+                inputmode="decimal"
+                placeholder="Ex: 15000"
+              />
+            </ion-item>
+
+            <ion-item>
+              <ion-label position="stacked">Photo URL (optionnel)</ion-label>
+              <ion-input v-model="draft.photoUrl" type="url" placeholder="https://..." />
+            </ion-item>
+
+            <ion-button expand="block" class="ion-margin-top" @click="trySubmit">
               Envoyer
             </ion-button>
           </ion-card-content>
@@ -100,7 +125,7 @@
         :is-open="toastOpen"
         :message="toastMessage"
         duration="2500"
-        color="danger"
+        :color="toastColor"
         @didDismiss="toastOpen = false"
       />
     </ion-content>
@@ -132,13 +157,17 @@ import {
   IonTextarea,
   IonInput,
 } from '@ionic/vue';
-import { useRouter } from 'vue-router';
 import { Geolocation } from '@capacitor/geolocation';
 
 import { L } from '@/lib/leaflet';
-import { loadAuthUser } from '@/services/authApi';
-import { createSignalement, listSignalements, type SignalementDto } from '@/services/signalementsApi';
-import { listStatuses, type StatusDto } from '@/services/statusesApi';
+import { useRouter } from 'vue-router';
+import { waitForAuthReady, getCurrentFirebaseUser } from '@/services/firebaseAuth';
+import {
+  createFirebaseSignalement,
+  listFirebaseSignalements,
+  subscribeFirebaseSignalements,
+  type FirebaseSignalement,
+} from '@/services/firebaseSignalements';
 
 const router = useRouter();
 
@@ -153,32 +182,43 @@ const creating = ref(false);
 
 const toastOpen = ref(false);
 const toastMessage = ref('');
+const toastColor = ref<'danger' | 'success'>('danger');
 
-const signalements = ref<SignalementDto[]>([]);
-const statuses = ref<StatusDto[] | null>(null);
-const defaultStatusId = ref<number | null>(null);
+const signalements = ref<FirebaseSignalement[]>([]);
+
+let unsubscribeSignalements: null | (() => void) = null;
 
 const draft = reactive({
   lat: null as number | null,
   lng: null as number | null,
   description: '',
+  surfaceAreaText: '',
+  budgetText: '',
+  photoUrl: '',
 });
 
-const authUserId = computed(() => loadAuthUser()?.userId ?? null);
+const firebaseUid = computed(() => getCurrentFirebaseUser()?.uid ?? null);
 
 const visibleSignalements = computed(() => {
-  const uid = authUserId.value;
+  const uid = firebaseUid.value;
   if (!myOnly.value || !uid) return signalements.value;
-  return signalements.value.filter((s) => s.user?.id === uid);
+  return signalements.value.filter((s) => s.userUid === uid);
 });
 
 function showError(message: string) {
   toastMessage.value = message;
+  toastColor.value = 'danger';
   toastOpen.value = true;
 }
 
-function validationNameOf(s: SignalementDto): string {
-  return s.validation?.status?.name ?? 'PENDING';
+function showSuccess(message: string) {
+  toastMessage.value = message;
+  toastColor.value = 'success';
+  toastOpen.value = true;
+}
+
+function validationNameOf(s: FirebaseSignalement): string {
+  return s.validationStatusName ?? 'PENDING';
 }
 
 const recap = computed(() => {
@@ -206,7 +246,7 @@ const canSubmit = computed(() => {
     draft.lat != null &&
     draft.lng != null &&
     draft.description.trim().length >= 4 &&
-    authUserId.value != null
+    firebaseUid.value != null
   );
 });
 
@@ -245,14 +285,14 @@ function destroyMap() {
   draftMarker = null;
 }
 
-function colorForSignalement(s: SignalementDto): string {
+function colorForSignalement(s: FirebaseSignalement): string {
   const v = validationNameOf(s);
   if (v === 'REJECTED') return '#ef4444';
   if (v === 'APPROVED') return '#22c55e';
   return '#f59e0b';
 }
 
-function renderMarkers(items: SignalementDto[]) {
+function renderMarkers(items: FirebaseSignalement[]) {
   if (!markersLayer) return;
   markersLayer.clearLayers();
 
@@ -266,15 +306,27 @@ function renderMarkers(items: SignalementDto[]) {
       weight: 2,
     });
 
-    const status = s.status?.name ?? '—';
+    const status = s.statusName ?? '—';
     const validation = validationNameOf(s);
-    const user = s.user?.username ? `@${s.user.username}` : `Utilisateur #${s.user?.id ?? '—'}`;
+    const user = s.userDisplayName
+      ? `@${s.userDisplayName}`
+      : (s.userEmail ?? s.userUid ?? 'Utilisateur');
+
+    const surface = typeof s.surfaceArea === 'number' && Number.isFinite(s.surfaceArea) ? s.surfaceArea : null;
+    const budget = typeof s.budget === 'number' && Number.isFinite(s.budget) ? s.budget : null;
+    const photo = typeof s.photoUrl === 'string' && s.photoUrl.trim() ? s.photoUrl.trim() : null;
 
     m.bindPopup(
-      `<strong>${status}</strong><br/>Validation: ${validation}<br/>${user}<br/><em>${escapeHtml(
-        s.description,
-      )}</em>`,
+      `<strong>${status}</strong><br/>Validation: ${validation}<br/>${user}` +
+        `${surface != null ? `<br/>Surface: ${escapeHtml(String(surface))} m²` : ''}` +
+        `${budget != null ? `<br/>Budget: ${escapeHtml(String(budget))} DA` : ''}` +
+        `${photo ? `<br/><a href="${escapeHtml(photo)}" target="_blank" rel="noopener">Photo</a>` : ''}` +
+        `<br/><em>${escapeHtml(s.description)}</em>`,
     );
+
+    // Popup on hover (desktop); click still works.
+    m.on('mouseover', () => m.openPopup());
+    m.on('mouseout', () => m.closePopup());
 
     m.addTo(markersLayer);
   }
@@ -297,38 +349,27 @@ function clearDraft() {
   draft.lat = null;
   draft.lng = null;
   draft.description = '';
+  draft.surfaceAreaText = '';
+  draft.budgetText = '';
+  draft.photoUrl = '';
   if (draftMarker && map) {
     map.removeLayer(draftMarker);
   }
   draftMarker = null;
 }
 
-async function ensureDefaultStatusId(): Promise<number | null> {
-  if (defaultStatusId.value != null) return defaultStatusId.value;
-
-  if (!statuses.value) {
-    const res = await listStatuses();
-    if (!res.success) {
-      showError(res.message || 'Impossible de charger les statuts');
-      return null;
-    }
-    statuses.value = res.statuses;
-  }
-
-  const list = statuses.value ?? [];
-  const found = list.find((s) => s.name === 'NOUVEAU') ?? list[0];
-  defaultStatusId.value = found?.id ?? null;
-  return defaultStatusId.value;
+function parseOptionalNumber(text: string): number | null {
+  const raw = text.trim();
+  if (!raw) return null;
+  const v = Number(raw.replace(',', '.'));
+  return Number.isFinite(v) ? v : null;
 }
 
 async function refresh() {
   loading.value = true;
   try {
-    const res = await listSignalements();
-    if (!res.success) {
-      showError(res.message || 'Erreur lors du chargement');
-      return;
-    }
+    const res = await listFirebaseSignalements();
+    if (!res.success) return showError(res.message || 'Erreur lors du chargement');
     signalements.value = res.signalements;
   } finally {
     loading.value = false;
@@ -361,36 +402,48 @@ function toggleCreate() {
 }
 
 async function submit() {
-  const uid = authUserId.value;
-  if (!uid) return showError('Veuillez vous connecter.');
+  if (!firebaseUid.value) return showError('Veuillez vous connecter.');
   if (draft.lat == null || draft.lng == null) return showError('Position requise (toucher la carte).');
   if (draft.description.trim().length < 4) return showError('Description trop courte.');
 
-  const statusId = await ensureDefaultStatusId();
-  if (!statusId) return;
-
   loading.value = true;
   try {
-    const res = await createSignalement({
-      userId: uid,
-      statusId,
+    const surfaceArea = parseOptionalNumber(draft.surfaceAreaText);
+    const budget = parseOptionalNumber(draft.budgetText);
+    const photoUrl = draft.photoUrl.trim().length > 0 ? draft.photoUrl.trim() : null;
+
+    console.log('[UI] Submitting signalement to Firestore...', { lat: draft.lat, lng: draft.lng, description: draft.description.trim() });
+
+    const res = await createFirebaseSignalement({
       latitude: draft.lat,
       longitude: draft.lng,
       description: draft.description.trim(),
+      surfaceArea,
+      budget,
+      photoUrl,
     });
+    if (!res.success) return showError(res.message || 'Création impossible');
 
-    if (!res.success) {
-      showError(res.message || 'Création impossible');
-      return;
-    }
+    console.log('[UI] Signalement created successfully', { id: res.id });
+    showSuccess(`Signalement créé ! (ID: ${res.id.substring(0, 8)}...)`);
 
-    // Optimistic update
-    signalements.value = [res.signalement, ...signalements.value];
+    // Keep refresh for consistency; realtime subscription should also update the list.
+    await refresh();
     creating.value = false;
     clearDraft();
   } finally {
     loading.value = false;
   }
+}
+
+function trySubmit() {
+  if (!creating.value) return showError('Active le formulaire en appuyant sur "Nouveau signalement".');
+  if (!firebaseUid.value) return showError('Veuillez vous connecter.');
+  if (draft.lat == null || draft.lng == null) return showError('Position requise (toucher la carte).');
+  if (draft.description.trim().length < 4) return showError('Description trop courte.');
+
+  // All validations passed -> perform submit
+  void submit();
 }
 
 function escapeHtml(value: string): string {
@@ -403,10 +456,18 @@ function escapeHtml(value: string): string {
 }
 
 onMounted(async () => {
-  if (!authUserId.value) {
-    await router.replace('/login');
-    return;
-  }
+  const user = await waitForAuthReady();
+  if (!user) return void (await router.replace('/login'));
+
+  // Realtime updates (shows new docs immediately, and surfaces permission errors).
+  unsubscribeSignalements = subscribeFirebaseSignalements(
+    (items) => {
+      signalements.value = items;
+    },
+    (message) => {
+      showError(message);
+    },
+  );
 
   await nextTick();
   ensureMap();
@@ -414,6 +475,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  if (unsubscribeSignalements) unsubscribeSignalements();
   destroyMap();
 });
 

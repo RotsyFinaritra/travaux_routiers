@@ -104,7 +104,7 @@ import {
   IonToast,
 } from '@ionic/vue';
 import { useRouter } from 'vue-router';
-import { loginFirebase } from '@/services/authApi';
+import { loginFirebaseOnly } from '@/services/firebaseAuth';
 
 const email = ref('');
 const password = ref('');
@@ -126,7 +126,7 @@ async function onLogin() {
   if (!email.value.trim()) return showError('Email requis.');
   if (password.value.length < 6) return showError('Mot de passe trop court.');
 
-  const resp = await loginFirebase(email.value.trim(), password.value);
+  const resp = await loginFirebaseOnly(email.value.trim(), password.value);
   if (!resp.success) return showError(resp.message || 'Connexion impossible');
 
   // For now, send user to the main tabs.
