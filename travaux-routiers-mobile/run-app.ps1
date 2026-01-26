@@ -1,29 +1,26 @@
+param(
+	[switch]$LiveReload,
+	[string]$PublicHost,
+	[int]$Port = 8100
+)
+
 $ErrorActionPreference = 'Stop'
 
 $projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $projectRoot
 
-$devPort = 5173
-$devServerUp = $false
-try {
-	$devServerUp = (Test-NetConnection -ComputerName '127.0.0.1' -Port $devPort -InformationLevel Quiet)
-} catch {
-	$devServerUp = $false
-}
+if ($LiveReload) {
+	Write-Host "Running Android with Live Reload (port $Port)..."
+	Write-Host "Note: your phone MUST be able to reach your PC IP (same network)."
 
-if (-not $devServerUp) {
-	Write-Host "Starting Vite dev server on 0.0.0.0:$devPort ..."
-	Start-Process -FilePath "powershell" -ArgumentList @(
-		"-NoExit",
-		"-Command",
-		"Set-Location '$projectRoot'; npx vite --host 0.0.0.0 --port $devPort"
-	) | Out-Null
-	Start-Sleep -Seconds 2
+	if ($PublicHost -and $PublicHost.Trim().Length -gt 0) {
+		ionic cap run android -l --external --public-host $PublicHost --port $Port
+	} else {
+		ionic cap run android -l --external --port $Port
+	}
 } else {
-	Write-Host "Vite dev server already running on port $devPort."
+	Write-Host "Running Android WITHOUT Live Reload (uses built assets, no network needed)..."
+	npm run build
+	npx cap sync android
+	ionic cap run android
 }
-
-ionic cap run android -l --external
-
-# Alternative (no live reload):
-# ionic cap run android

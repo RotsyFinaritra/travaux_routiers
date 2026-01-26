@@ -6,8 +6,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface SignalementRepository extends JpaRepository<Signalement, Long> {
+	Optional<Signalement> findByFirebaseDocId(String firebaseDocId);
+
 	/**
 	 * Returns signalements filtered by validation status name.
 	 * Special case: when statusName is 'PENDING', includes rows where validation is missing.
