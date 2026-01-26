@@ -1,11 +1,13 @@
 import React from "react";
 import Sidebar from "../components/Sidebar";
 import "../styles/dashboard.css";
-import { syncFirebaseSignalements } from "../services/firebaseSyncApi";
+import { syncFirebaseSignalements, syncLocalToFirebase } from "../services/firebaseSyncApi";
 
 const ManagerDashboard: React.FC = () => {
   const [syncing, setSyncing] = React.useState(false);
   const [syncMsg, setSyncMsg] = React.useState<string | null>(null);
+  const [reverseSyncing, setReverseSyncing] = React.useState(false);
+  const [reverseSyncMsg, setReverseSyncMsg] = React.useState<string | null>(null);
 
   async function onSyncClick() {
     setSyncing(true);
@@ -24,6 +26,23 @@ const ManagerDashboard: React.FC = () => {
     }
   }
 
+  async function onReverseSyncClick() {
+    setReverseSyncing(true);
+    setReverseSyncMsg(null);
+    try {
+      const res = await syncLocalToFirebase();
+      if (!res.success) {
+        setReverseSyncMsg(res.message || "Synchronisation échouée");
+        return;
+      }
+      setReverseSyncMsg(
+        `Sync Local→Firebase OK: +${res.created} créés, ${res.updated} maj, ${res.errors} erreurs`,
+      );
+    } finally {
+      setReverseSyncing(false);
+    }
+  }
+
   return (
     <div style={{ display: "flex" }}>
       <Sidebar />
@@ -39,6 +58,11 @@ const ManagerDashboard: React.FC = () => {
                 {syncing ? "⏳ Synchronisation..." : "🔄 Synchroniser Firebase → Local"}
               </button>
               {syncMsg ? <span style={{ fontSize: 14 }}>{syncMsg}</span> : null}
+              
+              <button className="btn-back" onClick={onReverseSyncClick} disabled={reverseSyncing}>
+                {reverseSyncing ? "⏳ Synchronisation..." : "📤 Synchroniser Local → Firebase"}
+              </button>
+              {reverseSyncMsg ? <span style={{ fontSize: 14 }}>{reverseSyncMsg}</span> : null}
             </div>
           </header>
           {/* Statistiques principales */}

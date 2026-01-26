@@ -94,6 +94,91 @@ public class FirebaseSignalementSyncService {
         );
     }
 
+    public Map<String, Object> syncLocalToFirebase() {
+        int created = 0;
+        int updated = 0;
+        int skipped = 0;
+        int errors = 0;
+
+        try {
+            for (Signalement sig : signalementRepository.findAll()) {
+                try {
+                    // Skip if already synced to Firebase
+                    if (sig.getFirebaseDocId() != null && !sig.getFirebaseDocId().isEmpty()) {
+                        // Check if doc exists in Firebase, update if needed
+                        DocumentReference docRef = firestore.collection("signalements").document(sig.getFirebaseDocId());
+                        DocumentSnapshot doc = docRef.get().get();
+                        
+                        if (doc.exists()) {
+                            // Update existing doc
+                            docRef.update(buildFirebaseData(sig)).get();
+                            updated++;
+                        } else {
+                            // Doc was deleted in Firebase, recreate
+                            docRef.set(buildFirebaseData(sig)).get();
+                            created++;
+                        }
+                    } else {
+                        // Create new Firebase document
+                        DocumentReference docRef = firestore.collection("signalements").document();
+                        docRef.set(buildFirebaseData(sig)).get();
+                        
+                        // Save Firebase doc ID back to local DB
+                        sig.setFirebaseDocId(docRef.getId());
+                        signalementRepository.save(sig);
+                        created++;
+                    }
+                } catch (Exception e) {
+                    errors++;
+                    logger.warn("Sync local signalement {} to Firebase failed: {}", sig.getId(), e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("local-to-firebase-sync-failed: " + e.getMessage(), e);
+        }
+
+        return Map.of(
+                "success", true,
+                "created", created,
+                "updated", updated,
+                "skipped", skipped,
+                "errors", errors
+        );
+    }
+
+    private Map<String, Object> buildFirebaseData(Signalement sig) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("source", "web-manager");
+        data.put("latitude", sig.getLatitude().doubleValue());
+        data.put("longitude", sig.getLongitude().doubleValue());
+        data.put("description", sig.getDescription());
+        data.put("statusName", sig.getStatus().getName());
+        
+        if (sig.getValidation() != null) {
+            data.put("validationStatusName", sig.getValidation().getStatus().getName());
+        }
+        
+        if (sig.getSurfaceArea() != null) {
+            data.put("surfaceArea", sig.getSurfaceArea().doubleValue());
+        }
+        if (sig.getBudget() != null) {
+            data.put("budget", sig.getBudget().doubleValue());
+        }
+        if (sig.getPhotoUrl() != null) {
+            data.put("photoUrl", sig.getPhotoUrl());
+        }
+        
+        if (sig.getUser() != null) {
+            data.put("userEmail", sig.getUser().getEmail());
+            data.put("userDisplayName", sig.getUser().getUsername());
+        }
+        
+        data.put("syncedToLocalAt", Timestamp.now());
+        data.put("localId", sig.getId());
+        
+        return data;
+    }
+
     private enum SyncDecision { CREATED, UPDATED, SKIPPED }
 
     private SyncDecision upsertSignalementFromDoc(DocumentSnapshot doc) throws Exception {
