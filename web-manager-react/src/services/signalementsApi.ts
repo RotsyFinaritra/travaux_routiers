@@ -1,4 +1,38 @@
-import { apiFetch, ApiError } from "../lib/apiClient";
+export type UpdateSignalementInput = {
+  statusId: number;
+  entrepriseId?: number | null;
+  latitude: number;
+  longitude: number;
+  description: string;
+  surfaceArea?: number | null;
+  budget?: number | null;
+  photoUrl?: string | null;
+};
+
+export async function updateSignalement(
+  signalementId: number,
+  input: UpdateSignalementInput,
+): Promise<{ success: true; signalement: SignalementDto } | { success: false; message: string }> {
+  try {
+    const signalement = await apiFetch<SignalementDto>(`/signalements/${signalementId}`, {
+      method: "PUT",
+      data: {
+        status: { id: input.statusId },
+        entreprise: input.entrepriseId ? { id: input.entrepriseId } : null,
+        latitude: input.latitude,
+        longitude: input.longitude,
+        description: input.description,
+        surfaceArea: input.surfaceArea ?? null,
+        budget: input.budget ?? null,
+        photoUrl: input.photoUrl ?? null,
+      },
+    });
+    return { success: true, signalement };
+  } catch (error) {
+    return { success: false, message: messageFromError(error) };
+  }
+}
+import { ApiError, apiFetch } from "../lib/apiClient";
 
 export type MinimalUserDto = {
   id: number;
@@ -112,6 +146,23 @@ export async function createSignalement(
         surfaceArea: input.surfaceArea ?? null,
         budget: input.budget ?? null,
         photoUrl: input.photoUrl ?? null,
+      },
+    });
+    return { success: true, signalement };
+  } catch (error) {
+    return { success: false, message: messageFromError(error) };
+  }
+}
+
+export async function updateSignalementStatus(
+  signalementId: number,
+  statusId: number,
+): Promise<{ success: true; signalement: SignalementDto } | { success: false; message: string }> {
+  try {
+    const signalement = await apiFetch<SignalementDto>(`/signalements/${signalementId}/status`, {
+      method: "PATCH",
+      data: {
+        status: { id: statusId },
       },
     });
     return { success: true, signalement };
