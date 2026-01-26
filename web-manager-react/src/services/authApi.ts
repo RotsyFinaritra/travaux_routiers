@@ -1,12 +1,12 @@
+import type { FirebaseError } from "firebase/app";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
 } from "firebase/auth";
-import type { FirebaseError } from "firebase/app";
 import { auth } from "../firebase";
-import { apiFetch, ApiError } from "../lib/apiClient";
+import { ApiError, apiFetch } from "../lib/apiClient";
 
 export type AuthMode = "firebase" | "local";
 
@@ -153,15 +153,28 @@ export async function login(input: LoginInput): Promise<AuthResponse> {
 
   try {
     if (mode === "firebase") {
-      const cred = await signInWithEmailAndPassword(auth, input.usernameOrEmail, input.password);
-      const idToken = await cred.user.getIdToken();
+      try {
+        const cred = await signInWithEmailAndPassword(auth, input.usernameOrEmail, input.password);
+        const idToken = await cred.user.getIdToken();
 
-      const resp = await apiFetch<AuthResponse>("/auth/login", {
-        method: "POST",
-        data: { idToken },
-      });
-      saveAuthUser(resp);
-      return resp;
+        const resp = await apiFetch<AuthResponse>("/auth/login", {
+          method: "POST",
+          data: { idToken, usernameOrEmail: input.usernameOrEmail },
+        });
+        saveAuthUser(resp);
+        return resp;
+      } catch (firebaseError) {
+        // En cas d'échec Firebase, notifier le backend pour incrémenter login_attempts
+        try {
+          const resp = await apiFetch<AuthResponse>("/auth/login", {
+            method: "POST",
+            data: { usernameOrEmail: input.usernameOrEmail },
+          });
+          return { ...resp, success: false, message: messageFromError(firebaseError) };
+        } catch (apiError) {
+          return { success: false, message: messageFromError(firebaseError) };
+        }
+      }
     }
 
     const resp = await apiFetch<AuthResponse>("/auth/login", {
