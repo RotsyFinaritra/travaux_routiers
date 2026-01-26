@@ -74,6 +74,10 @@ public class FirebaseAuthProvider implements AuthProvider {
                 resp.setMessage("account-blocked");
                 resp.setBlocked(true);
                 resp.setRemainingAttempts(0);
+                resp.setLoginAttempts(user.getLoginAttempts());
+                resp.setBlockedAt(user.getBlockedAt());
+                resp.setLastLogin(user.getLastLogin());
+                resp.setTypeUserId(user.getTypeUser() != null ? user.getTypeUser().getId() : null);
                 return resp;
             }
 
@@ -94,6 +98,10 @@ public class FirebaseAuthProvider implements AuthProvider {
             resp.setUsername(user.getUsername());
             resp.setEmail(user.getEmail());
             resp.setTypeName(user.getTypeUser() != null ? user.getTypeUser().getName() : "USER");
+            resp.setLoginAttempts(user.getLoginAttempts());
+            resp.setBlockedAt(user.getBlockedAt());
+            resp.setLastLogin(user.getLastLogin());
+            resp.setTypeUserId(user.getTypeUser() != null ? user.getTypeUser().getId() : null);
         } catch (Exception e) {
             logger.error("Firebase login failed", e);
             resp.setSuccess(false);

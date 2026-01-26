@@ -66,6 +66,10 @@ public class LocalAuthProvider implements AuthProvider {
             resp.setMessage("account-blocked");
             resp.setBlocked(true);
             resp.setRemainingAttempts(0);
+            resp.setLoginAttempts(user.getLoginAttempts());
+            resp.setBlockedAt(user.getBlockedAt());
+            resp.setLastLogin(user.getLastLogin());
+            resp.setTypeUserId(user.getTypeUser() != null ? user.getTypeUser().getId() : null);
             return resp;
         }
 
@@ -88,6 +92,10 @@ public class LocalAuthProvider implements AuthProvider {
                 resp.setMessage("invalid-credentials");
             }
             userRepository.save(user);
+            resp.setLoginAttempts(user.getLoginAttempts());
+            resp.setBlockedAt(user.getBlockedAt());
+            resp.setLastLogin(user.getLastLogin());
+            resp.setTypeUserId(user.getTypeUser() != null ? user.getTypeUser().getId() : null);
             resp.setSuccess(false);
             return resp;
         }
@@ -112,6 +120,10 @@ public class LocalAuthProvider implements AuthProvider {
         resp.setTokenExp(java.time.Instant.now().getEpochSecond() + jwtService.getSessionTtlSeconds());
         resp.setBlocked(false);
         resp.setRemainingAttempts(Math.max(0, Math.max(1, maxLoginAttempts)));
+        resp.setLoginAttempts(user.getLoginAttempts());
+        resp.setBlockedAt(user.getBlockedAt());
+        resp.setLastLogin(user.getLastLogin());
+        resp.setTypeUserId(user.getTypeUser() != null ? user.getTypeUser().getId() : null);
         return resp;
     }
 
