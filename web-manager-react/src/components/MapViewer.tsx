@@ -134,7 +134,7 @@ const MapViewer: React.FC = () => {
                         <span className="popup-label">📝 Description:</span>
                         <span className="popup-value">{s.description}</span>
                       </div>
-                      {s.photoUrl && (
+                      {typeof s.photoUrl === "string" && s.photoUrl.trim() !== "" && (
                         <img src={s.photoUrl} alt="Photo du signalement" className="popup-photo" />
                       )}
                     </div>
