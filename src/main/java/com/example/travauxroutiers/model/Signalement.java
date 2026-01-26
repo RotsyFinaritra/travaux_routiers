@@ -40,7 +40,7 @@ public class Signalement {
     @Column(precision = 15, scale = 2)
     private BigDecimal budget;
 
-    @Column(name = "photo_url", length = 255)
+    @Column(name = "photo_url", columnDefinition = "TEXT")
     private String photoUrl;
 
     @Column(name = "firebase_doc_id", unique = true, length = 64)

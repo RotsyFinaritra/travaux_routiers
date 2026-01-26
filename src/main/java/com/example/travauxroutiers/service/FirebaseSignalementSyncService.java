@@ -240,6 +240,28 @@ public class FirebaseSignalementSyncService {
                 changed = true;
             }
 
+            // Optional fields: surfaceArea, budget, photoUrl
+            Double surfaceArea = doc.getDouble("surfaceArea");
+            BigDecimal newSurfaceArea = surfaceArea != null ? BigDecimal.valueOf(surfaceArea) : null;
+            if (!java.util.Objects.equals(existing.getSurfaceArea(), newSurfaceArea)) {
+                existing.setSurfaceArea(newSurfaceArea);
+                changed = true;
+            }
+
+            Double budget = doc.getDouble("budget");
+            BigDecimal newBudget = budget != null ? BigDecimal.valueOf(budget) : null;
+            if (!java.util.Objects.equals(existing.getBudget(), newBudget)) {
+                existing.setBudget(newBudget);
+                changed = true;
+            }
+
+            String photoUrl = doc.getString("photoUrl");
+            String newPhotoUrl = (photoUrl != null && !photoUrl.isBlank()) ? photoUrl : null;
+            if (!java.util.Objects.equals(existing.getPhotoUrl(), newPhotoUrl)) {
+                existing.setPhotoUrl(newPhotoUrl);
+                changed = true;
+            }
+
             if (!changed) {
                 markDocSynced(doc.getReference(), existing.getId());
                 return SyncDecision.SKIPPED;

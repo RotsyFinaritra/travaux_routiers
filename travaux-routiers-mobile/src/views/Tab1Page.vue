@@ -109,10 +109,27 @@
               />
             </ion-item>
 
-            <ion-item>
-              <ion-label position="stacked">Photo URL (optionnel)</ion-label>
-              <ion-input v-model="draft.photoUrl" type="url" placeholder="https://..." />
+            <ion-item lines="none">
+              <ion-label position="stacked">Photo (optionnel)</ion-label>
             </ion-item>
+            
+            <div class="photo-actions ion-padding">
+              <ion-button size="small" @click="takePhoto">
+                <ion-icon slot="start" :icon="cameraOutline" />
+                Prendre photo
+              </ion-button>
+              <ion-button size="small" fill="outline" @click="choosePhoto">
+                <ion-icon slot="start" :icon="imagesOutline" />
+                Galerie
+              </ion-button>
+              <ion-button v-if="draft.photoUrl" size="small" fill="clear" color="danger" @click="removePhoto">
+                <ion-icon slot="icon-only" :icon="trashOutline" />
+              </ion-button>
+            </div>
+            
+            <div v-if="draft.photoUrl" class="photo-preview ion-padding">
+              <img :src="draft.photoUrl" alt="Aperçu" />
+            </div>
 
             <ion-button expand="block" class="ion-margin-top" @click="trySubmit">
               Envoyer
@@ -134,6 +151,8 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { cameraOutline, imagesOutline, trashOutline } from 'ionicons/icons';
 import {
   IonPage,
   IonHeader,
@@ -148,6 +167,7 @@ import {
   IonCardHeader,
   IonCardTitle,
   IonCardContent,
+  IonIcon,
   IonGrid,
   IonRow,
   IonCol,
@@ -446,6 +466,44 @@ function trySubmit() {
   void submit();
 }
 
+async function takePhoto() {
+  try {
+    const image = await Camera.getPhoto({
+      quality: 80,
+      allowEditing: false,
+      resultType: CameraResultType.DataUrl,
+      source: CameraSource.Camera,
+    });
+    
+    if (image.dataUrl) {
+      draft.photoUrl = image.dataUrl;
+    }
+  } catch (error) {
+    console.warn('Camera canceled or error:', error);
+  }
+}
+
+async function choosePhoto() {
+  try {
+    const image = await Camera.getPhoto({
+      quality: 80,
+      allowEditing: false,
+      resultType: CameraResultType.DataUrl,
+      source: CameraSource.Photos,
+    });
+    
+    if (image.dataUrl) {
+      draft.photoUrl = image.dataUrl;
+    }
+  } catch (error) {
+    console.warn('Photo picker canceled or error:', error);
+  }
+}
+
+function removePhoto() {
+  draft.photoUrl = '';
+}
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
@@ -507,5 +565,25 @@ watch(
   font-size: 28px;
   font-weight: 700;
   line-height: 1;
+}
+
+.photo-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.photo-preview {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.photo-preview img {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 </style>
