@@ -89,6 +89,10 @@ public class FirebaseAuthProvider implements AuthProvider {
                 }
             }
 
+            // Successful login -> reset counters and update login info
+            user.setLoginAttempts(0);
+            user.setIsBlocked(false);
+            user.setBlockedAt(null);
             user.setLastLogin(LocalDateTime.now());
             userRepository.save(user);
 
@@ -104,8 +108,56 @@ public class FirebaseAuthProvider implements AuthProvider {
             resp.setTypeUserId(user.getTypeUser() != null ? user.getTypeUser().getId() : null);
         } catch (Exception e) {
             logger.error("Firebase login failed", e);
+            // Tenter d'extraire l'email de l'erreur Firebase (si possible)
+            String email = null;
+            String msg = e.getMessage();
+            if (msg != null) {
+                // Recherche d'un email dans le message d'erreur (regex simple)
+                java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}").matcher(msg);
+                if (matcher.find()) {
+                    email = matcher.group();
+                }
+            }
+            Optional<User> optUser = Optional.empty();
+            if (email != null) {
+                optUser = userRepository.findByEmail(email);
+            }
+            // Fallback : essayer usernameOrEmail du LoginRequest
+            if (optUser.isEmpty()) {
+                String identifier = request.getUsernameOrEmail();
+                if (identifier != null && !identifier.isBlank()) {
+                    optUser = userRepository.findByEmail(identifier);
+                    if (optUser.isEmpty()) {
+                        optUser = userRepository.findByUsername(identifier);
+                    }
+                }
+            }
+            if (optUser.isPresent()) {
+                User user = optUser.get();
+                int attempts = (user.getLoginAttempts() == null) ? 0 : user.getLoginAttempts();
+                attempts++;
+                user.setLoginAttempts(attempts);
+                int max = 3;
+                int remaining = Math.max(0, max - attempts);
+                resp.setRemainingAttempts(remaining);
+                if (attempts >= max) {
+                    user.setIsBlocked(true);
+                    user.setBlockedAt(LocalDateTime.now());
+                    resp.setBlocked(true);
+                    resp.setMessage("account-blocked");
+                } else {
+                    resp.setBlocked(false);
+                    resp.setMessage("firebase-login-error: " + e.getMessage());
+                }
+                userRepository.save(user);
+                resp.setLoginAttempts(user.getLoginAttempts());
+                resp.setBlockedAt(user.getBlockedAt());
+                resp.setLastLogin(user.getLastLogin());
+                resp.setTypeUserId(user.getTypeUser() != null ? user.getTypeUser().getId() : null);
+            } else {
+                resp.setMessage("firebase-login-error: " + e.getMessage());
+            }
             resp.setSuccess(false);
-            resp.setMessage("firebase-login-error: " + e.getMessage());
         }
         return resp;
     }
