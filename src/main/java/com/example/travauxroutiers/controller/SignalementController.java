@@ -1,19 +1,36 @@
 package com.example.travauxroutiers.controller;
 
-import com.example.travauxroutiers.model.Signalement;
-import com.example.travauxroutiers.service.SignalementService;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.travauxroutiers.model.Signalement;
+import com.example.travauxroutiers.service.SignalementService;
 
 @RestController
 @RequestMapping("/api/signalements")
 public class SignalementController {
+    private static final Logger logger = LoggerFactory.getLogger(SignalementController.class);
+
     private final SignalementService service;
 
-    public SignalementController(SignalementService service) { this.service = service; }
+    public SignalementController(SignalementService service) {
+        this.service = service;
+    }
 
     @GetMapping
     public List<Signalement> list(@RequestParam(value = "validationStatus", required = false) String validationStatus) {
@@ -29,14 +46,59 @@ public class SignalementController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Signalement> get(@PathVariable Long id) { return service.get(id).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build()); }
+    public ResponseEntity<Signalement> get(@PathVariable Long id) {
+        try {
+            return service.get(id).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        } catch (Exception ex) {
+            logger.error("[SignalementController] GET /api/signalements/{} failed", id, ex);
+            return ResponseEntity.status(500).build();
+        }
+    }
 
     @PostMapping
-    public ResponseEntity<Signalement> create(@RequestBody Signalement t) { Signalement c = service.create(t); return ResponseEntity.created(URI.create("/api/signalements/"+c.getId())).body(c); }
+    public ResponseEntity<Signalement> create(@RequestBody Signalement t) {
+        Signalement c = service.create(t);
+        return ResponseEntity.created(URI.create("/api/signalements/" + c.getId())).body(c);
+    }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Signalement> update(@PathVariable Long id, @RequestBody Signalement t) { return ResponseEntity.ok(service.update(id, t)); }
+    public ResponseEntity<Signalement> update(@PathVariable Long id, @RequestBody Signalement t) {
+        try {
+            logger.info("[SignalementController] Update request for id {} with payload: {}", id, t);
+            Signalement updated = service.update(id, t);
+            return ResponseEntity.ok(updated);
+        } catch (Exception ex) {
+            logger.error("[SignalementController] PUT /api/signalements/{} failed", id, ex);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<Signalement> updateStatus(@PathVariable Long id,
+            @RequestBody Map<String, Object> statusData) {
+        try {
+            logger.info("[SignalementController] Update status request for id {} with payload: {}", id, statusData);
+            Object statusObj = statusData.get("status");
+            if (statusObj instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> statusMap = (Map<String, Object>) statusObj;
+                Object idObj = statusMap.get("id");
+                if (idObj instanceof Number) {
+                    Long statusId = ((Number) idObj).longValue();
+                    Signalement updated = service.updateStatus(id, statusId);
+                    return ResponseEntity.ok(updated);
+                }
+            }
+            return ResponseEntity.badRequest().build();
+        } catch (Exception ex) {
+            logger.error("[SignalementController] PATCH /api/signalements/{}/status failed", id, ex);
+            return ResponseEntity.status(500).build();
+        }
+    }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) { service.delete(id); return ResponseEntity.noContent().build(); }
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
+    }
 }

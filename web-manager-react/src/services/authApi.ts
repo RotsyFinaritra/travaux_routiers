@@ -171,7 +171,7 @@ export async function login(input: LoginInput): Promise<AuthResponse> {
             data: { usernameOrEmail: input.usernameOrEmail },
           });
           return { ...resp, success: false, message: messageFromError(firebaseError) };
-        } catch (apiError) {
+        } catch {
           return { success: false, message: messageFromError(firebaseError) };
         }
       }
