@@ -34,10 +34,22 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration config = new CorsConfiguration();
-    // Allow Vite dev server + local tooling. Using patterns avoids hardcoding the port.
+    // Allow Vite dev server + local tooling and LAN devices for development.
+    // Use allowedOriginPatterns for flexible matching during dev.
     config.setAllowedOriginPatterns(List.of(
+        "http://localhost",
         "http://localhost:*",
-        "http://127.0.0.1:*"
+        "https://localhost",
+        "https://localhost:*",
+        "http://127.0.0.1",
+        "http://127.0.0.1:*",
+        "https://127.0.0.1",
+        "https://127.0.0.1:*",
+        // Capacitor/Ionic WebView origins when not using live reload
+        "capacitor://localhost",
+        "ionic://localhost",
+        "http://192.168.*.*",
+        "http://10.*.*.*"
     ));
     config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     config.setAllowedHeaders(List.of(
@@ -47,7 +59,9 @@ public class SecurityConfig {
         "X-Requested-With"
     ));
     config.setExposedHeaders(List.of("Location"));
-    config.setAllowCredentials(true);
+    // For development we don't require credentials on cross-origin requests
+    // to avoid Access-Control-Allow-Origin wildcard restrictions.
+    config.setAllowCredentials(false);
     config.setMaxAge(3600L);
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
