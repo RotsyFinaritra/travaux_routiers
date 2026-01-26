@@ -220,6 +220,9 @@ export async function createFirebaseSignalement(
       localId: null,
     });
 
+    console.log('[firestore] docRef path:', docRef.path);
+
+
     // Confirm the document exists locally / server-side (helps surface permission issues).
     try {
       const written = await getDoc(docRef);
