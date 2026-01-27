@@ -80,24 +80,22 @@ const SignalementList: React.FC = () => {
     if (statusName === "NOUVEAU") {
       return (
         <button
-          className="btn-action"
-          style={{ backgroundColor: "#3498db", color: "white" }}
+          className="btn-action btn-status"
           onClick={() => void onChangeStatus(signalement.id, "EN_COURS")}
           title="Passer en cours"
         >
-          ▶️ Entamer
+          ▶️
         </button>
       );
     }
     if (statusName === "EN_COURS") {
       return (
         <button
-          className="btn-action"
-          style={{ backgroundColor: "#27ae60", color: "white" }}
+          className="btn-action btn-status"
           onClick={() => void onChangeStatus(signalement.id, "TERMINE")}
           title="Marquer comme terminé"
         >
-          ✅ Terminer
+          ✅
         </button>
       );
     }
@@ -175,11 +173,11 @@ const SignalementList: React.FC = () => {
                       <td>{formatDate(s.dateSignalement)}</td>
                       <td>
                         {getStatusActionButton(s)}
-                        <Link to={`/signalements/modifier/${s.id}`} className="btn-action btn-edit">
-                          ✏️ Modifier
+                        <Link to={`/signalements/modifier/${s.id}`} className="btn-action btn-edit" title="Modifier">
+                          ✏️
                         </Link>
-                        <button className="btn-action btn-delete" onClick={() => void onDelete(s.id)}>
-                          🗑️ Supprimer
+                        <button className="btn-action btn-delete" onClick={() => void onDelete(s.id)} title="Supprimer">
+                          🗑️
                         </button>
                       </td>
                     </tr>
