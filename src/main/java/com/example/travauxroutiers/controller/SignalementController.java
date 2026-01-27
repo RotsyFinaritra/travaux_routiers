@@ -21,8 +21,12 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.travauxroutiers.model.Signalement;
 import com.example.travauxroutiers.service.SignalementService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/api/signalements")
+@Tag(name = "Signalements", description = "Gestion des signalements")
 public class SignalementController {
     private static final Logger logger = LoggerFactory.getLogger(SignalementController.class);
 
@@ -33,6 +37,7 @@ public class SignalementController {
     }
 
     @GetMapping
+    @Operation(summary = "Lister les signalements")
     public List<Signalement> list(@RequestParam(value = "validationStatus", required = false) String validationStatus) {
         if (validationStatus != null && !validationStatus.trim().isEmpty()) {
             return service.listByValidationStatusName(validationStatus);
@@ -41,11 +46,13 @@ public class SignalementController {
     }
 
     @GetMapping("/pending-validation")
+    @Operation(summary = "Lister les signalements en attente de validation")
     public List<Signalement> pendingValidation() {
         return service.listByValidationStatusName("PENDING");
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Récupérer un signalement par id")
     public ResponseEntity<Signalement> get(@PathVariable Long id) {
         try {
             return service.get(id).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
@@ -56,12 +63,14 @@ public class SignalementController {
     }
 
     @PostMapping
+    @Operation(summary = "Créer un signalement")
     public ResponseEntity<Signalement> create(@RequestBody Signalement t) {
         Signalement c = service.create(t);
         return ResponseEntity.created(URI.create("/api/signalements/" + c.getId())).body(c);
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Mettre à jour un signalement")
     public ResponseEntity<Signalement> update(@PathVariable Long id, @RequestBody Signalement t) {
         try {
             logger.info("[SignalementController] Update request for id {} with payload: {}", id, t);
@@ -74,6 +83,7 @@ public class SignalementController {
     }
 
     @PatchMapping("/{id}/status")
+    @Operation(summary = "Changer le status d'un signalement")
     public ResponseEntity<Signalement> updateStatus(@PathVariable Long id,
             @RequestBody Map<String, Object> statusData) {
         try {
@@ -97,6 +107,7 @@ public class SignalementController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Supprimer un signalement")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
