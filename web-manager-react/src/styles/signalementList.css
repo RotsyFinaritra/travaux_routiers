@@ -1,40 +1,38 @@
 /* Styles spécifiques à la liste des signalements */
 
 .table-container {
-  background: white;
-  border-radius: 15px;
-  padding: 30px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-  margin-bottom: 20px;
+  background: var(--bg-card, white);
+  border-radius: var(--radius-lg, 12px);
+  padding: 18px;
+  border: 1px solid var(--border-color, #e2e8f0);
+  margin-bottom: 16px;
   overflow-x: auto;
 }
 
 .table-title {
-  font-size: 22px;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #1e293b);
+  margin-bottom: 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
 .btn {
-  padding: 8px 16px;
+  padding: 6px 12px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm, 6px);
   cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  transition: all 0.3s;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.15s;
+  background: var(--text-primary, #1e293b);
   color: white;
-  box-shadow: 0 3px 10px rgba(102, 126, 234, 0.2);
 }
 
 .btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+  background: #0f172a;
 }
 
 .signalement-table {
@@ -43,20 +41,36 @@
 }
 
 .signalement-table th {
-  background: #667eea;
-  color: white;
-  padding: 15px;
+  background: var(--bg-secondary, #f8fafc);
+  color: var(--text-secondary, #64748b);
+  padding: 10px 12px;
   text-align: left;
   font-weight: 600;
-  font-size: 13px;
+  font-size: 11px;
   text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
 }
 
 .signalement-table td {
-  padding: 15px;
-  border-bottom: 1px solid #e0e0e0;
-  color: #333;
-  font-size: 14px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
+  color: var(--text-primary, #1e293b);
+  font-size: 13px;
+}
+
+.signalement-table td:last-child {
+  min-width: 180px;
+}
+
+.signalement-table .actions-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.signalement-table tr:hover {
+  background: var(--bg-secondary, #f8fafc);
 }
 
 .signalement-table tr:last-child td {
@@ -65,53 +79,82 @@
 
 .badge {
   display: inline-block;
-  padding: 5px 12px;
-  border-radius: 15px;
-  color: white;
-  font-weight: bold;
-  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 10px;
   text-transform: uppercase;
 }
 
 .badge-nouveau {
-  background-color: #2196f3;
+  background: #f0f9ff;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
 }
 
 .badge-encours {
-  background-color: #ff9800;
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
 }
 
 .badge-termine {
-  background-color: #4caf50;
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
 }
 
 .btn-action {
-  margin-right: 8px;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 4px;
+  margin-bottom: 4px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm, 6px);
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid var(--border-color, #e2e8f0);
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.15s;
+  background: var(--bg-secondary, #f8fafc);
+  color: var(--text-secondary, #64748b);
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.btn-action:hover {
+  background: var(--border-color, #e2e8f0);
+  color: var(--text-primary, #1e293b);
 }
 
 .btn-edit {
-  background: #fffbe7;
-  color: #ff9800;
-  border: 1px solid #ffecb3;
+  background: var(--bg-secondary, #f8fafc);
 }
 
 .btn-edit:hover {
-  background: #ffecb3;
+  background: #fef3c7;
+  border-color: #fcd34d;
+  color: #92400e;
 }
 
 .btn-delete {
-  background: #ffeaea;
-  color: #e74c3c;
-  border: 1px solid #ffcfcf;
+  background: var(--bg-secondary, #f8fafc);
 }
 
 .btn-delete:hover {
-  background: #ffcfcf;
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+
+.btn-status {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.btn-status:hover {
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #15803d;
 }

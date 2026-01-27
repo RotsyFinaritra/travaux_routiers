@@ -13,6 +13,9 @@ import SignalementList from './pages/signalement/SignalementList';
 import CreateUser from './pages/user/CreateUser';
 import EditUser from './pages/user/EditUser';
 import UserList from './pages/user/UserList';
+import CreateEntreprise from './pages/entreprise/CreateEntreprise';
+import EditEntreprise from './pages/entreprise/EditEntreprise';
+import EntrepriseList from './pages/entreprise/EntrepriseList';
 
 import LoginPage from './pages/auth/Login';
 import EditManagerProfile from './pages/manager/EditManagerProfile';
@@ -34,6 +37,9 @@ function App() {
         <Route path="/utilisateurs" element={<RequireRole allowed={["MANAGER"]}><UserList /></RequireRole>} />
         <Route path="/utilisateurs/creer" element={<RequireRole allowed={["MANAGER"]}><CreateUser /></RequireRole>} />
         <Route path="/utilisateurs/modifier/:id" element={<RequireRole allowed={["MANAGER"]}><EditUser /></RequireRole>} />
+        <Route path="/entreprises" element={<RequireRole allowed={["MANAGER"]}><EntrepriseList /></RequireRole>} />
+        <Route path="/entreprises/creer" element={<RequireRole allowed={["MANAGER"]}><CreateEntreprise /></RequireRole>} />
+        <Route path="/entreprises/modifier/:id" element={<RequireRole allowed={["MANAGER"]}><EditEntreprise /></RequireRole>} />
         <Route path="/tableau" element={<RequireRole allowed={["MANAGER"]}><ManagerDashboard /></RequireRole>} />
         <Route path="/signalements" element={<RequireAuth><SignalementList /></RequireAuth>} />
         <Route path="/signalements/ajouter" element={<RequireAuth><AddSignalement /></RequireAuth>} />

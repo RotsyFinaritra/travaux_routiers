@@ -103,51 +103,54 @@
 }
 
 .btn-create {
-  background: linear-gradient(135deg, #28a745, #34ce57);
+  background: var(--text-primary, #1e293b);
   color: white;
   border: none;
-  padding: 12px 20px;
-  border-radius: 8px;
-  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: var(--radius-md, 8px);
+  font-weight: 500;
+  font-size: 12px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+  transition: all 0.15s ease;
 }
 
 .btn-create:hover {
-  background: linear-gradient(135deg, #218838, #28a745);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+  background: #0f172a;
 }
 
 .users-table {
   width: 100%;
   min-width: 900px;
   border-collapse: collapse;
-  background: white;
-  border-radius: 12px;
+  background: var(--bg-card, white);
+  border-radius: var(--radius-md, 10px);
   overflow: hidden;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-  margin-bottom: 25px;
+  border: 1px solid var(--border-color, #e2e8f0);
+  margin-bottom: 20px;
 }
 
 .users-table th {
-  background: linear-gradient(135deg, #6c757d, #5a6268);
-  color: white;
-  padding: 15px;
+  background: var(--bg-secondary, #f8fafc);
+  color: var(--text-secondary, #64748b);
+  padding: 10px 12px;
   text-align: left;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
 }
 
 .users-table td {
-  padding: 15px;
-  border-bottom: 1px solid #e9ecef;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
   vertical-align: middle;
+  font-size: 13px;
+  color: var(--text-primary, #1e293b);
 }
 
 .users-table tr:hover {
-  background-color: #f8f9fa;
+  background-color: var(--bg-secondary, #f8fafc);
 }
 
 .username {
@@ -161,38 +164,42 @@
 }
 
 .type-badge {
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
 }
 
 .type-manager {
-  background: linear-gradient(135deg, #dc3545, #c82333);
-  color: white;
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
 }
 
 .type-user {
-  background: linear-gradient(135deg, #17a2b8, #138496);
-  color: white;
+  background: #f0f9ff;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
 }
 
 .status-badge {
-  padding: 6px 12px;
-  border-radius: 15px;
-  font-size: 12px;
-  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
 }
 
 .status-active {
-  background: linear-gradient(135deg, #28a745, #34ce57);
-  color: white;
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
 }
 
 .status-blocked {
-  background: linear-gradient(135deg, #dc3545, #c82333);
-  color: white;
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
 }
 
 .last-login {
@@ -208,48 +215,54 @@
 }
 
 .btn-action {
-  background: none;
-  border: 2px solid transparent;
-  padding: 8px;
-  border-radius: 6px;
+  background: var(--bg-secondary, #f8fafc);
+  border: 1px solid var(--border-color, #e2e8f0);
+  padding: 6px;
+  border-radius: var(--radius-sm, 6px);
   cursor: pointer;
-  font-size: 16px;
-  transition: all 0.3s ease;
+  font-size: 14px;
+  transition: all 0.15s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 36px;
-  height: 36px;
+  min-width: 30px;
+  height: 30px;
+  color: var(--text-secondary, #64748b);
+}
+
+.btn-action:hover {
+  background: var(--border-color, #e2e8f0);
+  color: var(--text-primary, #1e293b);
 }
 
 .btn-edit {
-  background: linear-gradient(135deg, #ffc107, #e0a800);
-  border-color: #ffc107;
+  color: var(--text-secondary, #64748b);
 }
 
 .btn-edit:hover {
-  background: linear-gradient(135deg, #e0a800, #d39e00);
-  transform: scale(1.1);
+  background: #fef3c7;
+  border-color: #fcd34d;
+  color: #92400e;
 }
 
 .btn-unlock {
-  background: linear-gradient(135deg, #17a2b8, #138496);
-  border-color: #17a2b8;
+  color: var(--text-secondary, #64748b);
 }
 
 .btn-unlock:hover {
-  background: linear-gradient(135deg, #138496, #117a8b);
-  transform: scale(1.1);
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1d4ed8;
 }
 
 .btn-delete {
-  background: linear-gradient(135deg, #dc3545, #c82333);
-  border-color: #dc3545;
+  color: var(--text-secondary, #64748b);
 }
 
 .btn-delete:hover {
-  background: linear-gradient(135deg, #c82333, #bd2130);
-  transform: scale(1.1);
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #b91c1c;
 }
 
 .summary {

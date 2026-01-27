@@ -52,6 +52,12 @@ const Sidebar: React.FC = () => {
               </Link>
             </li>
             <li>
+              <Link to="/entreprises" className={location.pathname.startsWith("/entreprises") ? "active" : ""}>
+                <span>🏢</span>
+                <span>Entreprises</span>
+              </Link>
+            </li>
+            <li>
               <Link
                 to="/manager/validations"
                 className={location.pathname.startsWith("/manager/validations") ? "active" : ""}
