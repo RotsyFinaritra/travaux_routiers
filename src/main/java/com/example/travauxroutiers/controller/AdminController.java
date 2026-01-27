@@ -8,6 +8,8 @@ import com.example.travauxroutiers.repository.UserRepository;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.UserRecord.CreateRequest;
 import com.google.firebase.auth.UserRecord;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +21,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
+@Tag(name = "Administration", description = "Endpoints d'administration (protégés par X-ADMIN-KEY)")
 public class AdminController {
 
     private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
@@ -33,6 +36,7 @@ public class AdminController {
     }
 
     @PostMapping("/users")
+    @Operation(summary = "Créer un utilisateur (Firebase + local mirror)")
     public ResponseEntity<?> createUser(@RequestHeader(value = "X-ADMIN-KEY", required = false) String adminKey,
                                         @RequestBody AdminDtos.CreateUserRequest req) {
         String expected = System.getenv("ADMIN_API_KEY");
@@ -115,6 +119,7 @@ public class AdminController {
     }
 
     @PostMapping("/users/{id}/role")
+    @Operation(summary = "Assigner un rôle à un utilisateur")
     public ResponseEntity<?> assignRole(@RequestHeader(value = "X-ADMIN-KEY", required = false) String adminKey,
                                         @PathVariable("id") Long userId,
                                         @RequestBody AdminDtos.RoleRequest req) {
@@ -148,6 +153,7 @@ public class AdminController {
     }
 
     @PostMapping("/users/{id}/unblock")
+    @Operation(summary = "Débloquer un utilisateur", tags = {"Deblocage utilisateurs"})
     public ResponseEntity<?> unblockUser(@RequestHeader(value = "X-ADMIN-KEY", required = false) String adminKey,
                                          @PathVariable("id") Long userId) {
         String expected = System.getenv("ADMIN_API_KEY");
