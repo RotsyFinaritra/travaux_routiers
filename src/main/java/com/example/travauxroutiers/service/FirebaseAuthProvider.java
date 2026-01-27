@@ -1,20 +1,21 @@
 package com.example.travauxroutiers.service;
 
-import com.example.travauxroutiers.dto.AuthDtos;
-import com.example.travauxroutiers.model.User;
-import com.example.travauxroutiers.repository.UserRepository;
-import com.example.travauxroutiers.repository.TypeUserRepository;
-import com.example.travauxroutiers.model.TypeUser;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseToken;
+import java.time.LocalDateTime;
+import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.Optional;
+import com.example.travauxroutiers.dto.AuthDtos;
+import com.example.travauxroutiers.model.TypeUser;
+import com.example.travauxroutiers.model.User;
+import com.example.travauxroutiers.repository.TypeUserRepository;
+import com.example.travauxroutiers.repository.UserRepository;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseToken;
 
 @Service
 @Profile("cloud")
@@ -26,7 +27,8 @@ public class FirebaseAuthProvider implements AuthProvider {
     private final TypeUserRepository typeUserRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public FirebaseAuthProvider(UserRepository userRepository, TypeUserRepository typeUserRepository, PasswordEncoder passwordEncoder) {
+    public FirebaseAuthProvider(UserRepository userRepository, TypeUserRepository typeUserRepository,
+            PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.typeUserRepository = typeUserRepository;
         this.passwordEncoder = passwordEncoder;
@@ -37,9 +39,56 @@ public class FirebaseAuthProvider implements AuthProvider {
         AuthDtos.AuthResponse resp = new AuthDtos.AuthResponse();
 
         String idToken = request.getIdToken();
+        logger.info("[LOGIN] idToken present: {} | usernameOrEmail: {}", (idToken != null && !idToken.isBlank()),
+                request.getUsernameOrEmail());
+        // Si pas d'idToken, on tente quand même d'incrémenter login_attempts si
+        // possible
         if (idToken == null || idToken.isBlank()) {
+            logger.warn("[LOGIN] idToken manquant, tentative d'incrémentation login_attempts pour usernameOrEmail: {}",
+                    request.getUsernameOrEmail());
+            // Recherche utilisateur par usernameOrEmail
+            Optional<User> optUser = Optional.empty();
+            String identifier = request.getUsernameOrEmail();
+            if (identifier != null && !identifier.isBlank()) {
+                logger.info("[LOGIN] Recherche utilisateur par email: {}", identifier);
+                optUser = userRepository.findByEmail(identifier);
+                if (optUser.isEmpty()) {
+                    logger.info("[LOGIN] Non trouvé par email, recherche par username: {}", identifier);
+                    optUser = userRepository.findByUsername(identifier);
+                }
+            } else {
+                logger.warn("[LOGIN] usernameOrEmail non fourni dans la requête");
+            }
+            if (optUser.isPresent()) {
+                User user = optUser.get();
+                int attempts = (user.getLoginAttempts() == null) ? 0 : user.getLoginAttempts();
+                attempts++;
+                user.setLoginAttempts(attempts);
+                int max = 3;
+                int remaining = Math.max(0, max - attempts);
+                resp.setRemainingAttempts(remaining);
+                logger.info("[LOGIN] Utilisateur trouvé (id: {}), loginAttempts: {} (max: {})", user.getId(), attempts,
+                        max);
+                if (attempts >= max) {
+                    user.setIsBlocked(true);
+                    user.setBlockedAt(LocalDateTime.now());
+                    resp.setBlocked(true);
+                    resp.setMessage("account-blocked");
+                    logger.warn("[LOGIN] Utilisateur bloqué (id: {})", user.getId());
+                } else {
+                    resp.setBlocked(false);
+                    resp.setMessage("firebase-login-error: missing-idToken");
+                }
+                userRepository.save(user);
+                resp.setLoginAttempts(user.getLoginAttempts());
+                resp.setBlockedAt(user.getBlockedAt());
+                resp.setLastLogin(user.getLastLogin());
+                resp.setTypeUserId(user.getTypeUser() != null ? user.getTypeUser().getId() : null);
+            } else {
+                logger.warn("[LOGIN] Aucun utilisateur trouvé pour usernameOrEmail: {}", identifier);
+                resp.setMessage("firebase-login-error: missing-idToken");
+            }
             resp.setSuccess(false);
-            resp.setMessage("missing-idToken");
             return resp;
         }
 
@@ -70,10 +119,15 @@ public class FirebaseAuthProvider implements AuthProvider {
 
             // Enforce local block status (if an admin blocked the account)
             if (Boolean.TRUE.equals(user.getIsBlocked())) {
+                logger.warn("[LOGIN] Utilisateur bloqué (id: {})", user.getId());
                 resp.setSuccess(false);
                 resp.setMessage("account-blocked");
                 resp.setBlocked(true);
                 resp.setRemainingAttempts(0);
+                resp.setLoginAttempts(user.getLoginAttempts());
+                resp.setBlockedAt(user.getBlockedAt());
+                resp.setLastLogin(user.getLastLogin());
+                resp.setTypeUserId(user.getTypeUser() != null ? user.getTypeUser().getId() : null);
                 return resp;
             }
 
@@ -85,19 +139,84 @@ public class FirebaseAuthProvider implements AuthProvider {
                 }
             }
 
+            // Successful login -> reset counters and update login info
+            user.setLoginAttempts(0);
+            user.setIsBlocked(false);
+            user.setBlockedAt(null);
             user.setLastLogin(LocalDateTime.now());
             userRepository.save(user);
 
+            logger.info("[LOGIN] Connexion réussie pour utilisateur (id: {})", user.getId());
             resp.setSuccess(true);
             resp.setMessage("firebase-login-ok");
             resp.setUserId(user.getId());
             resp.setUsername(user.getUsername());
             resp.setEmail(user.getEmail());
             resp.setTypeName(user.getTypeUser() != null ? user.getTypeUser().getName() : "USER");
+            resp.setLoginAttempts(user.getLoginAttempts());
+            resp.setBlockedAt(user.getBlockedAt());
+            resp.setLastLogin(user.getLastLogin());
+            resp.setTypeUserId(user.getTypeUser() != null ? user.getTypeUser().getId() : null);
         } catch (Exception e) {
-            logger.error("Firebase login failed", e);
+            logger.error("[LOGIN] Firebase login failed", e);
+            // Tenter d'extraire l'email de l'erreur Firebase (si possible)
+            String email = null;
+            String msg = e.getMessage();
+            if (msg != null) {
+                // Recherche d'un email dans le message d'erreur (regex simple)
+                java.util.regex.Matcher matcher = java.util.regex.Pattern
+                        .compile("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}").matcher(msg);
+                if (matcher.find()) {
+                    email = matcher.group();
+                }
+            }
+            Optional<User> optUser = Optional.empty();
+            if (email != null) {
+                logger.info("[LOGIN] Recherche utilisateur par email extrait de l'erreur: {}", email);
+                optUser = userRepository.findByEmail(email);
+            }
+            // Fallback : essayer usernameOrEmail du LoginRequest
+            if (optUser.isEmpty()) {
+                String identifier = request.getUsernameOrEmail();
+                if (identifier != null && !identifier.isBlank()) {
+                    logger.info("[LOGIN] Recherche utilisateur par email: {} (fallback)", identifier);
+                    optUser = userRepository.findByEmail(identifier);
+                    if (optUser.isEmpty()) {
+                        logger.info("[LOGIN] Non trouvé par email, recherche par username: {} (fallback)", identifier);
+                        optUser = userRepository.findByUsername(identifier);
+                    }
+                }
+            }
+            if (optUser.isPresent()) {
+                User user = optUser.get();
+                int attempts = (user.getLoginAttempts() == null) ? 0 : user.getLoginAttempts();
+                attempts++;
+                user.setLoginAttempts(attempts);
+                int max = 3;
+                int remaining = Math.max(0, max - attempts);
+                resp.setRemainingAttempts(remaining);
+                logger.info("[LOGIN] Utilisateur trouvé (id: {}), loginAttempts: {} (max: {})", user.getId(), attempts,
+                        max);
+                if (attempts >= max) {
+                    user.setIsBlocked(true);
+                    user.setBlockedAt(LocalDateTime.now());
+                    resp.setBlocked(true);
+                    resp.setMessage("account-blocked");
+                    logger.warn("[LOGIN] Utilisateur bloqué (id: {})", user.getId());
+                } else {
+                    resp.setBlocked(false);
+                    resp.setMessage("firebase-login-error: " + e.getMessage());
+                }
+                userRepository.save(user);
+                resp.setLoginAttempts(user.getLoginAttempts());
+                resp.setBlockedAt(user.getBlockedAt());
+                resp.setLastLogin(user.getLastLogin());
+                resp.setTypeUserId(user.getTypeUser() != null ? user.getTypeUser().getId() : null);
+            } else {
+                logger.warn("[LOGIN] Aucun utilisateur trouvé pour l'erreur: {}", msg);
+                resp.setMessage("firebase-login-error: " + e.getMessage());
+            }
             resp.setSuccess(false);
-            resp.setMessage("firebase-login-error: " + e.getMessage());
         }
         return resp;
     }

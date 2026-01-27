@@ -1,8 +1,8 @@
-import React from "react";
 import "leaflet/dist/leaflet.css";
+import React from "react";
 import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
-import { listStatuses, type StatusDto } from "../services/statusesApi";
 import { listEntreprises, type EntrepriseDto } from "../services/entreprisesApi";
+import { listStatuses, type StatusDto } from "../services/statusesApi";
 
 export type SignalementFormValues = {
   latitude: number;
@@ -10,6 +10,7 @@ export type SignalementFormValues = {
   description: string;
   surfaceArea: number;
   budget?: number | null;
+  photoUrl?: string | null;
   statusId: number;
   entrepriseId?: number | null;
 };
@@ -22,6 +23,7 @@ type Props = {
 };
 
 const SignalementForm: React.FC<Props> = ({ initial = {}, submitLabel = "Créer le signalement", submitting = false, onSubmit }) => {
+
   const [position, setPosition] = React.useState<[number, number] | null>(
     initial.latitude && initial.longitude ? [initial.latitude, initial.longitude] : null,
   );
@@ -34,6 +36,16 @@ const SignalementForm: React.FC<Props> = ({ initial = {}, submitLabel = "Créer 
 
   const [entreprises, setEntreprises] = React.useState<EntrepriseDto[]>([]);
   const [entrepriseId, setEntrepriseId] = React.useState<number | null | "">(initial.entrepriseId ?? null);
+
+  // Synchronise les champs quand initial change (utile pour édition)
+  React.useEffect(() => {
+    if (initial.latitude && initial.longitude) setPosition([initial.latitude, initial.longitude]);
+    if (typeof initial.description === "string") setDescription(initial.description);
+    if (typeof initial.surfaceArea === "number") setSurfaceArea(String(initial.surfaceArea));
+    if (typeof initial.budget === "number") setBudget(String(initial.budget));
+    if (typeof initial.statusId === "number") setStatusId(initial.statusId);
+    if (typeof initial.entrepriseId === "number" || initial.entrepriseId === null) setEntrepriseId(initial.entrepriseId ?? null);
+  }, [initial]);
 
   React.useEffect(() => {
     let mounted = true;

@@ -40,8 +40,11 @@ public class Signalement {
     @Column(precision = 15, scale = 2)
     private BigDecimal budget;
 
-    @Column(name = "photo_url", length = 255)
+    @Column(name = "photo_url", columnDefinition = "TEXT")
     private String photoUrl;
+
+    @Column(name = "firebase_doc_id", unique = true, length = 64)
+    private String firebaseDocId;
 
     @OneToOne(mappedBy = "signalement", cascade = CascadeType.ALL)
     private Validation validation;
@@ -69,6 +72,9 @@ public class Signalement {
     public void setBudget(BigDecimal budget) { this.budget = budget; }
     public String getPhotoUrl() { return photoUrl; }
     public void setPhotoUrl(String photoUrl) { this.photoUrl = photoUrl; }
+
+    public String getFirebaseDocId() { return firebaseDocId; }
+    public void setFirebaseDocId(String firebaseDocId) { this.firebaseDocId = firebaseDocId; }
 
     
 

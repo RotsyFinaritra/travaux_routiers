@@ -1,5 +1,7 @@
 package com.example.travauxroutiers.dto;
 
+import java.time.LocalDateTime;
+
 public class AuthDtos {
 
     // --- Existing login DTOs (can still be used by clients if needed) ---
@@ -79,6 +81,14 @@ public class AuthDtos {
         private Boolean blocked;
         /** Remaining attempts before block (local profile). */
         private Integer remainingAttempts;
+        /** Extra user info: number of failed login attempts. */
+        private Integer loginAttempts;
+        /** When the user was blocked (if blocked). */
+        private LocalDateTime blockedAt;
+        /** Last successful login timestamp. */
+        private LocalDateTime lastLogin;
+        /** Id of the user's TypeUser (if present). */
+        private Long typeUserId;
 
         public boolean isSuccess() { return success; }
         public void setSuccess(boolean success) { this.success = success; }
@@ -101,5 +111,13 @@ public class AuthDtos {
         public void setBlocked(Boolean blocked) { this.blocked = blocked; }
         public Integer getRemainingAttempts() { return remainingAttempts; }
         public void setRemainingAttempts(Integer remainingAttempts) { this.remainingAttempts = remainingAttempts; }
+        public Integer getLoginAttempts() { return loginAttempts; }
+        public void setLoginAttempts(Integer loginAttempts) { this.loginAttempts = loginAttempts; }
+        public LocalDateTime getBlockedAt() { return blockedAt; }
+        public void setBlockedAt(LocalDateTime blockedAt) { this.blockedAt = blockedAt; }
+        public LocalDateTime getLastLogin() { return lastLogin; }
+        public void setLastLogin(LocalDateTime lastLogin) { this.lastLogin = lastLogin; }
+        public Long getTypeUserId() { return typeUserId; }
+        public void setTypeUserId(Long typeUserId) { this.typeUserId = typeUserId; }
     }
 }

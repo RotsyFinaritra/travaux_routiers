@@ -1,8 +1,9 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
+import { deleteSignalement, listSignalements, updateSignalementStatus, type SignalementDto } from "../../services/signalementsApi";
+import { listStatuses, type StatusDto } from "../../services/statusesApi";
 import "../../styles/signalementList.css";
-import { deleteSignalement, listSignalements, type SignalementDto } from "../../services/signalementsApi";
 
 function badgeClassForStatusName(name: string | undefined | null): string {
   const v = (name ?? "").toLowerCase().trim();
@@ -24,6 +25,7 @@ const SignalementList: React.FC = () => {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [items, setItems] = React.useState<SignalementDto[]>([]);
+  const [statuses, setStatuses] = React.useState<StatusDto[]>([]);
 
   const refresh = React.useCallback(async () => {
     setLoading(true);
@@ -41,6 +43,10 @@ const SignalementList: React.FC = () => {
 
   React.useEffect(() => {
     void refresh();
+    void (async () => {
+      const resp = await listStatuses();
+      if (resp.success) setStatuses(resp.statuses);
+    })();
   }, [refresh]);
 
   async function onDelete(id: number) {
@@ -52,6 +58,50 @@ const SignalementList: React.FC = () => {
       return;
     }
     void refresh();
+  }
+
+  async function onChangeStatus(id: number, newStatusName: string) {
+    const normalizedTarget = newStatusName.toUpperCase().trim();
+    const targetStatus = statuses.find((s) => s.name.toUpperCase().trim() === normalizedTarget);
+    if (!targetStatus) {
+      window.alert(`Statut "${newStatusName}" introuvable`);
+      return;
+    }
+    const resp = await updateSignalementStatus(id, targetStatus.id);
+    if (!resp.success) {
+      window.alert(resp.message);
+      return;
+    }
+    void refresh();
+  }
+
+  function getStatusActionButton(signalement: SignalementDto) {
+    const statusName = (signalement.status?.name ?? "").toUpperCase().trim();
+    if (statusName === "NOUVEAU") {
+      return (
+        <button
+          className="btn-action"
+          style={{ backgroundColor: "#3498db", color: "white" }}
+          onClick={() => void onChangeStatus(signalement.id, "EN_COURS")}
+          title="Passer en cours"
+        >
+          ▶️ Entamer
+        </button>
+      );
+    }
+    if (statusName === "EN_COURS") {
+      return (
+        <button
+          className="btn-action"
+          style={{ backgroundColor: "#27ae60", color: "white" }}
+          onClick={() => void onChangeStatus(signalement.id, "TERMINE")}
+          title="Marquer comme terminé"
+        >
+          ✅ Terminer
+        </button>
+      );
+    }
+    return null;
   }
 
   return (
@@ -124,6 +174,7 @@ const SignalementList: React.FC = () => {
                       <td>{s.entreprise?.name ?? "-"}</td>
                       <td>{formatDate(s.dateSignalement)}</td>
                       <td>
+                        {getStatusActionButton(s)}
                         <Link to={`/signalements/modifier/${s.id}`} className="btn-action btn-edit">
                           ✏️ Modifier
                         </Link>
