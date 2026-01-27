@@ -10,6 +10,7 @@ export type SignalementFormValues = {
   description: string;
   surfaceArea: number;
   budget?: number | null;
+  photoUrl?: string | null;
   statusId: number;
   entrepriseId?: number | null;
 };
