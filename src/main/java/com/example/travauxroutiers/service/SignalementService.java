@@ -7,19 +7,23 @@ import org.springframework.stereotype.Service;
 
 import com.example.travauxroutiers.model.Signalement;
 import com.example.travauxroutiers.model.Status;
+import com.example.travauxroutiers.model.SignalementStatus;
 import com.example.travauxroutiers.repository.SignalementRepository;
 import com.example.travauxroutiers.repository.StatusRepository;
+import com.example.travauxroutiers.repository.SignalementStatusRepository;
 
 @Service
 public class SignalementService implements GenericService<Signalement, Long> {
     private final SignalementRepository repo;
     private final StatusRepository statusRepository;
+    private final SignalementStatusRepository signalementStatusRepository;
     private final ValidationService validationService;
 
     public SignalementService(SignalementRepository repo, StatusRepository statusRepository,
-            ValidationService validationService) {
+            SignalementStatusRepository signalementStatusRepository, ValidationService validationService) {
         this.repo = repo;
         this.statusRepository = statusRepository;
+        this.signalementStatusRepository = signalementStatusRepository;
         this.validationService = validationService;
     }
 
@@ -44,11 +48,23 @@ public class SignalementService implements GenericService<Signalement, Long> {
         } catch (Exception ex) {
             // do not fail create on validation init error; log if needed
         }
+
+        // Créer une entrée dans signalement_status pour le statut initial
+        if (saved.getStatus() != null) {
+            SignalementStatus statusEntry = new SignalementStatus();
+            statusEntry.setSignalement(saved);
+            statusEntry.setStatus(saved.getStatus());
+            statusEntry.setComment("Création du signalement");
+            signalementStatusRepository.save(statusEntry);
+        }
+
         return saved;
     }
 
     public Signalement update(Long id, Signalement t) {
         return repo.findById(id).map(existing -> {
+            Status oldStatus = existing.getStatus();
+
             if (t.getDescription() != null)
                 existing.setDescription(t.getDescription());
             if (t.getLatitude() != null)
@@ -65,7 +81,19 @@ public class SignalementService implements GenericService<Signalement, Long> {
                 existing.setBudget(t.getBudget());
             if (t.getPhotoUrl() != null)
                 existing.setPhotoUrl(t.getPhotoUrl());
-            return repo.save(existing);
+
+            Signalement updated = repo.save(existing);
+
+            // Si le statut a changé, créer une entrée dans signalement_status
+            if (t.getStatus() != null && (oldStatus == null || !oldStatus.getId().equals(t.getStatus().getId()))) {
+                SignalementStatus statusEntry = new SignalementStatus();
+                statusEntry.setSignalement(updated);
+                statusEntry.setStatus(t.getStatus());
+                statusEntry.setComment("Modification du signalement");
+                signalementStatusRepository.save(statusEntry);
+            }
+
+            return updated;
         }).orElseGet(() -> {
             t.setId(id);
             return repo.save(t);
@@ -78,10 +106,21 @@ public class SignalementService implements GenericService<Signalement, Long> {
 
     public Signalement updateStatus(Long id, Long statusId) {
         return repo.findById(id).map(signalement -> {
-            Status status = statusRepository.findById(statusId)
+            Status newStatus = statusRepository.findById(statusId)
                     .orElseThrow(() -> new RuntimeException("Status not found: " + statusId));
-            signalement.setStatus(status);
-            return repo.save(signalement);
+
+            Status oldStatus = signalement.getStatus();
+            signalement.setStatus(newStatus);
+            Signalement updated = repo.save(signalement);
+
+            // Créer une entrée dans signalement_status pour le changement de statut
+            SignalementStatus statusEntry = new SignalementStatus();
+            statusEntry.setSignalement(updated);
+            statusEntry.setStatus(newStatus);
+            statusEntry.setComment("Changement de statut via bouton rapide");
+            signalementStatusRepository.save(statusEntry);
+
+            return updated;
         }).orElseThrow(() -> new RuntimeException("Signalement not found: " + id));
     }
 }
