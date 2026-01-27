@@ -50,11 +50,11 @@ const PublicHome: React.FC = () => {
   const progressPercent = totalPoints > 0 ? ((countTermine / totalPoints) * 100).toFixed(1) : "0.0";
 
   return (
-    <div className="bg-light min-vh-100 w-100">
+    <div style={{ width: "100vw", minHeight: "100vh", margin: 0, padding: 0, background: "#f5f5f5" }}>
       <Header />
-      <div className="container-fluid p-3">
+      <div style={{ width: "100%", padding: "20px", boxSizing: "border-box" }}>
         {/* Tableau de récapitulation */}
-        <div className="mb-4">
+        <div style={{ marginBottom: "20px" }}>
           <h2 className="text-center mb-4">📊 Tableau de Récapitulation</h2>
           <StatsRecap
             totalPoints={totalPoints}
@@ -69,7 +69,7 @@ const PublicHome: React.FC = () => {
         </div>
         
         {/* Carte */}
-        <div style={{ width: "100%", maxWidth: "100vw", margin: 0, padding: 0 }}>
+        <div style={{ width: "100%", margin: 0, padding: 0 }}>
           <MapViewer />
         </div>
       </div>

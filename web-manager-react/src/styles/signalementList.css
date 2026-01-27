@@ -6,7 +6,11 @@
   padding: 18px;
   border: 1px solid var(--border-color, #e2e8f0);
   margin-bottom: 16px;
-  overflow-x: auto;
+  max-height: 650px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
 }
 
 .table-title {
@@ -17,6 +21,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  position: sticky;
+  top: -18px;
+  background: var(--bg-card, white);
+  z-index: 20;
+  margin: -18px -18px 14px -18px;
+  padding: 18px;
 }
 
 .btn {
@@ -38,6 +50,13 @@
 .signalement-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: auto;
+}
+
+.signalement-table thead {
+  position: sticky;
+  top: 50px;
+  z-index: 10;
 }
 
 .signalement-table th {
@@ -50,6 +69,7 @@
   text-transform: uppercase;
   letter-spacing: 0.3px;
   border-bottom: 1px solid var(--border-color, #e2e8f0);
+  white-space: nowrap;
 }
 
 .signalement-table td {
@@ -57,16 +77,12 @@
   border-bottom: 1px solid var(--border-color, #e2e8f0);
   color: var(--text-primary, #1e293b);
   font-size: 13px;
+  vertical-align: top;
 }
 
 .signalement-table td:last-child {
-  min-width: 180px;
-}
-
-.signalement-table .actions-cell {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
+  min-width: 140px;
+  white-space: nowrap;
 }
 
 .signalement-table tr:hover {
@@ -102,6 +118,19 @@
   background: #f0fdf4;
   color: #15803d;
   border: 1px solid #bbf7d0;
+}
+
+/* Gestion spécifique des colonnes */
+.signalement-table td:nth-child(2) {
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.signalement-table td:nth-child(3) {
+  font-size: 11px;
+  max-width: 150px;
 }
 
 .btn-action {
