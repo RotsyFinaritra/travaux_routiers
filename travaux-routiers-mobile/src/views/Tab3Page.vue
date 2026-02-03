@@ -54,6 +54,7 @@ import { logOutOutline } from 'ionicons/icons';
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { loadAuthUser, logout, type AuthResponse } from '@/services/authApi';
+import { removePushToken } from '@/services/pushNotifications';
 
 const router = useRouter();
 const user = ref<AuthResponse | null>(null);
@@ -63,6 +64,8 @@ onMounted(() => {
 });
 
 function handleLogout() {
+  // Remove push token before logging out
+  removePushToken();
   logout();
   router.replace('/login');
 }

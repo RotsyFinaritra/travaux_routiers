@@ -105,6 +105,7 @@ import {
 } from '@ionic/vue';
 import { useRouter } from 'vue-router';
 import { loginFirebaseOnly } from '@/services/firebaseAuth';
+import { registerPushNotifications } from '@/services/pushNotifications';
 
 const email = ref('');
 const password = ref('');
@@ -128,6 +129,9 @@ async function onLogin() {
 
   const resp = await loginFirebaseOnly(email.value.trim(), password.value);
   if (!resp.success) return showError(resp.message || 'Connexion impossible');
+
+  // Register for push notifications after successful login
+  await registerPushNotifications();
 
   // For now, send user to the main tabs.
   await router.replace('/tabs/tab1');
