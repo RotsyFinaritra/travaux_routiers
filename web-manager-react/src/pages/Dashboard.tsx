@@ -15,6 +15,7 @@ const ManagerDashboard: React.FC = () => {
 
   const [fullSyncing, setFullSyncing] = React.useState(false);
   const [fullSyncMsg, setFullSyncMsg] = React.useState<string | null>(null);
+  const [testResult, setTestResult] = React.useState<string | null>(null);
 
   // async function onSyncClick() {
   //   setSyncing(true);
@@ -32,11 +33,6 @@ const ManagerDashboard: React.FC = () => {
   //     setSyncing(false);
   //   }
   // }
-  const [syncing, setSyncing] = React.useState(false);
-  const [syncMsg, setSyncMsg] = React.useState<string | null>(null);
-  const [reverseSyncing, setReverseSyncing] = React.useState(false);
-  const [reverseSyncMsg, setReverseSyncMsg] = React.useState<string | null>(null);
-  const [testResult, setTestResult] = React.useState<string | null>(null);
 
   async function onTestApiClick() {
     try {
@@ -58,23 +54,6 @@ const ManagerDashboard: React.FC = () => {
     } catch (error) {
       console.error("❌ Test échoué:", error);
       setTestResult(`❌ Erreur complète: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
-    }
-  }
-
-  async function onSyncClick() {
-    setSyncing(true);
-    setSyncMsg(null);
-    try {
-      const res = await syncFirebaseSignalements();
-      if (!res.success) {
-        setSyncMsg(res.message || "Synchronisation échouée");
-        return;
-      }
-      setSyncMsg(
-        `Sync OK: +${res.created} créés, ${res.updated} maj, ${res.skipped} inchangés, ${res.errors} erreurs`,
-      );
-    } finally {
-      setSyncing(false);
     }
   }
 
