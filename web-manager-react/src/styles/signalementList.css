@@ -4,14 +4,14 @@
   background: #ffffff;
   border-radius: 12px;
   padding: 24px;
-  border: 2px solid #e1e8ed;
+  border: 2px solid #d5dbdb;
   margin-bottom: 20px;
   max-height: 650px;
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   position: relative;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.1);
 }
 
 .table-title {
@@ -30,7 +30,7 @@
   z-index: 20;
   margin: -24px -24px 20px -24px;
   padding: 24px;
-  border-bottom: 2px solid #e1e8ed;
+  border-bottom: 2px solid #d5dbdb;
 }
 
 .btn {
@@ -64,7 +64,7 @@
 }
 
 .signalement-table th {
-  background: linear-gradient(135deg, #3498db, #2980b9);
+  background: #2c3e50;
   color: #ffffff;
   padding: 14px 16px;
   text-align: left;
@@ -73,11 +73,12 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   white-space: nowrap;
+  border-bottom: 3px solid #34495e;
 }
 
 .signalement-table td {
   padding: 14px 16px;
-  border-bottom: 1px solid #e1e8ed;
+  border-bottom: 1px solid #d5dbdb;
   color: #2c3e50;
   font-size: 13px;
   vertical-align: top;
@@ -88,8 +89,16 @@
   white-space: nowrap;
 }
 
+.signalement-table td.action {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+
 .signalement-table tr:hover {
-  background: #f8f9fa;
+  background: #ecf0f1;
+  transition: background 0.2s ease;
 }
 
 .signalement-table tr:last-child td {
@@ -107,21 +116,21 @@
 }
 
 .badge-nouveau {
-  background: #fee;
-  color: #c0392b;
-  border-color: #e74c3c;
+  background: #fadbd8;
+  color: #922b21;
+  border-color: #cb4335;
 }
 
 .badge-encours {
-  background: #fff3cd;
-  color: #856404;
-  border-color: #f39c12;
+  background: #fdebd0;
+  color: #7d6608;
+  border-color: #d68910;
 }
 
 .badge-termine {
-  background: #d4edda;
-  color: #1e8449;
-  border-color: #27ae60;
+  background: #d5f4e6;
+  color: #0b5345;
+  border-color: #17a589;
 }
 
 .signalement-table td:nth-child(2) {
@@ -139,56 +148,61 @@
 .btn-action {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
-  margin-right: 6px;
-  margin-bottom: 6px;
   padding: 8px 12px;
   border-radius: 6px;
   font-size: 11px;
   font-weight: 600;
-  border: 2px solid #e1e8ed;
+  border: 2px solid #bdc3c7;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: #f8f9fa;
-  color: #34495e;
+  background: #ecf0f1;
+  color: #2c3e50;
   white-space: nowrap;
   text-decoration: none;
+  flex-shrink: 0;
 }
 
 .btn-action:hover {
-  background: #e1e8ed;
-  color: #2c3e50;
+  background: #d5dbdb;
+  color: #1a252f;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .btn-edit {
-  background: #f8f9fa;
+  background: #ecf0f1;
+  border-color: #bdc3c7;
 }
 
 .btn-edit:hover {
-  background: #fff3cd;
-  border-color: #f39c12;
-  color: #856404;
+  background: #fdebd0;
+  border-color: #d68910;
+  color: #7d6608;
 }
 
 .btn-delete {
-  background: #f8f9fa;
+  background: #ecf0f1;
+  border-color: #bdc3c7;
 }
 
 .btn-delete:hover {
-  background: #fee;
-  border-color: #e74c3c;
-  color: #c0392b;
+  background: #fadbd8;
+  border-color: #cb4335;
+  color: #922b21;
 }
 
 .btn-status {
-  background: #d4edda;
-  border-color: #27ae60;
+  background: #d5f4e6;
+  border-color: #17a589;
+  color: #0b5345;
 }
 
 .btn-status:hover {
-  background: #c3e6cb;
-  border-color: #229954;
-  color: #1e8449;
+  background: #abebc6;
+  border-color: #148f77;
+  color: #0b5345;
 }
 
 @media (max-width: 768px) {

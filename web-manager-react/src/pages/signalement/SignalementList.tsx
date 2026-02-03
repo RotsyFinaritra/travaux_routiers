@@ -171,7 +171,7 @@ const SignalementList: React.FC = () => {
                       <td>{s.budget ?? "-"}</td>
                       <td>{s.entreprise?.name ?? "-"}</td>
                       <td>{formatDate(s.dateSignalement)}</td>
-                      <td>
+                      <td className="action">
                         {getStatusActionButton(s)}
                         <Link to={`/signalements/modifier/${s.id}`} className="btn-action btn-edit" title="Modifier">
                           ✏️
