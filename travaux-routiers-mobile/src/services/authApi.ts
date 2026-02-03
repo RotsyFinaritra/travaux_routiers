@@ -88,3 +88,8 @@ export async function loginFirebase(email: string, password: string): Promise<Au
     return { success: false, message: messageFromError(e) };
   }
 }
+
+export function logout(): void {
+  localStorage.removeItem(STORAGE_KEY);
+  auth.signOut();
+}

@@ -5,6 +5,7 @@ import MapViewer from "../components/MapViewer";
 import StatsRecap from "../components/StatsRecap";
 import { listSignalements } from "../services/signalementsApi";
 import type { SignalementDto } from "../services/signalementsApi";
+import "../styles/publicHome.css";
 
 const PublicHome: React.FC = () => {
   const [signalements, setSignalements] = useState<SignalementDto[]>([]);
@@ -50,12 +51,12 @@ const PublicHome: React.FC = () => {
   const progressPercent = totalPoints > 0 ? ((countTermine / totalPoints) * 100).toFixed(1) : "0.0";
 
   return (
-    <div style={{ width: "100vw", minHeight: "100vh", margin: 0, padding: 0, background: "#f5f5f5" }}>
+    <div className="public-home-container">
       <Header />
-      <div style={{ width: "100%", padding: "20px", boxSizing: "border-box" }}>
+      <div className="public-home-content">
         {/* Tableau de récapitulation */}
-        <div style={{ marginBottom: "20px" }}>
-          <h2 className="text-center mb-4">📊 Tableau de Récapitulation</h2>
+        <div className="stats-section">
+          <h2 className="section-title">Tableau de Récapitulation</h2>
           <StatsRecap
             totalPoints={totalPoints}
             totalSurface={totalSurface}
@@ -69,7 +70,7 @@ const PublicHome: React.FC = () => {
         </div>
         
         {/* Carte */}
-        <div style={{ width: "100%", margin: 0, padding: 0 }}>
+        <div className="map-section">
           <MapViewer />
         </div>
       </div>

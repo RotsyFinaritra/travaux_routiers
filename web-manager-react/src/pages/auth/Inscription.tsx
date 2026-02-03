@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../../styles/inscription.css";
 import { register } from "../../services/authApi";
@@ -18,18 +18,42 @@ const Inscription: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [passwordStrength, setPasswordStrength] = useState<"weak" | "medium" | "strong" | null>(null);
 
   const progressWidth = useMemo(() => {
-    if (step === 1) return "0%";
-    if (step === 2) return "50%";
+    if (step === 1) return "33%";
+    if (step === 2) return "66%";
     return "100%";
   }, [step]);
+
+  useEffect(() => {
+    // Calculate password strength
+    if (!password) {
+      setPasswordStrength(null);
+      return;
+    }
+    
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (/[A-Z]/.test(password) && /[a-z]/.test(password)) strength++;
+    if (/\d/.test(password)) strength++;
+    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength++;
+    
+    if (strength <= 1) setPasswordStrength("weak");
+    else if (strength <= 2) setPasswordStrength("medium");
+    else setPasswordStrength("strong");
+  }, [password]);
 
   function nextStep() {
     setError(null);
     if (step === 1) {
       if (!username.trim() || !email.trim() || !typeUser) {
         setError("Veuillez remplir tous les champs obligatoires.");
+        return;
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        setError("Veuillez entrer une adresse email valide.");
         return;
       }
       setStep(2);
@@ -74,201 +98,284 @@ const Inscription: React.FC = () => {
       }
 
       setSuccess("Compte créé avec succès. Redirection vers la connexion…");
-      setTimeout(() => navigate("/"), 800);
+      setTimeout(() => navigate("/"), 1500);
     } finally {
       setLoading(false);
     }
   }
 
+  const typeUserLabels: { [key: string]: string } = {
+    "1": "Citoyen / Visiteur",
+    "2": "Technicien",
+    "3": "Entreprise"
+  };
+
   return (
-    <div className="container">
-      <div className="signup-card">
-        <div className="signup-header">
-          <h1>✨ Créer un Compte</h1>
-          <p>Rejoignez la plateforme de gestion des signalements d'Antananarivo</p>
+    <div className="inscription-container">
+      <div className="inscription-content-wrapper">
+        <div className="inscription-header">
+          <h1>Créer un Compte</h1>
+          <p>Rejoignez la plateforme de gestion des signalements routiers</p>
         </div>
-        <div className="signup-form">
-          {error && (
-            <div className="alert alert-error signup-alert" role="alert">
-              <span>{error}</span>
+
+        <div className="inscription-body">
+            {error && (
+              <div className="alert-banner alert-error" role="alert">
+                <svg className="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                <span>{error}</span>
+              </div>
+            )}
+            {success && (
+              <div className="alert-banner alert-success" role="status">
+                <svg className="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                <span>{success}</span>
+              </div>
+            )}
+
+            <div className="progress-indicator">
+              <div className="progress-track">
+                <div className="progress-fill" style={{ width: progressWidth }}></div>
+              </div>
+              <div className="progress-steps">
+                {[1, 2, 3].map((stepNum) => (
+                  <div
+                    key={stepNum}
+                    className={`progress-step ${step === stepNum ? "active" : ""} ${step > stepNum ? "completed" : ""}`}
+                  >
+                    <div className="step-number">{step > stepNum ? "✓" : stepNum}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="progress-labels">
+                <div className={`label ${step === 1 ? "active" : ""}`}>Infos</div>
+                <div className={`label ${step === 2 ? "active" : ""}`}>Sécurité</div>
+                <div className={`label ${step === 3 ? "active" : ""}`}>Confirmation</div>
+              </div>
             </div>
-          )}
-          {success && (
-            <div className="alert alert-success signup-alert" role="status">
-              <span>{success}</span>
-            </div>
-          )}
-          <div className="progress-steps">
-            <div className="progress-line" id="progressLine" style={{ width: progressWidth }}></div>
-            <div className={`step ${step === 1 ? "active" : ""}`} data-step="1">
-              <div className="step-circle">1</div>
-              <div className="step-label">Informations<br />personnelles</div>
-            </div>
-            <div className={`step ${step === 2 ? "active" : ""}`} data-step="2">
-              <div className="step-circle">2</div>
-              <div className="step-label">Sécurité</div>
-            </div>
-            <div className={`step ${step === 3 ? "active" : ""}`} data-step="3">
-              <div className="step-circle">3</div>
-              <div className="step-label">Confirmation</div>
-            </div>
-          </div>
-          <form id="signupForm" onSubmit={onSubmit}>
-            {/* Étape 1: Informations personnelles */}
-            <div className={`form-step ${step === 1 ? "active" : ""}`} data-step="1">
-              <h2 style={{ marginBottom: 20, color: "#333" }}>📝 Informations personnelles</h2>
-              <div className="form-grid">
-                <div className="form-group">
-                  <label htmlFor="username">
-                    Nom d'utilisateur <span className="required">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="username"
-                    placeholder="Ex: rakoto_jean"
-                    required
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                  />
-                  <div className="input-hint">3-50 caractères, lettres et chiffres uniquement</div>
+
+            <form onSubmit={onSubmit}>
+              {/* Step 1: Personal Information */}
+              {step === 1 && (
+                <div className="form-step fade-in">
+                  <div className="step-content">
+                    <div className="form-field">
+                      <label htmlFor="username">
+                        Nom d'utilisateur <span className="required">*</span>
+                      </label>
+                      <div className="input-wrapper">
+                        <input
+                          type="text"
+                          id="username"
+                          placeholder="Jean Rakoto"
+                          required
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          minLength={3}
+                          maxLength={50}
+                        />
+                      </div>
+                      <p className="field-hint">Utilisé pour vous identifier sur la plateforme</p>
+                    </div>
+
+                    <div className="form-field">
+                      <label htmlFor="email">
+                        Adresse Email <span className="required">*</span>
+                      </label>
+                      <div className="input-wrapper">
+                        <input
+                          type="email"
+                          id="email"
+                          placeholder="vous@exemple.mg"
+                          required
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                        />
+                      </div>
+                      <p className="field-hint">Nous utiliserons cet email pour vous contacter</p>
+                    </div>
+
+                    <div className="form-field">
+                      <label htmlFor="typeUser">
+                        Type de Compte <span className="required">*</span>
+                      </label>
+                      <select
+                        id="typeUser"
+                        required
+                        value={typeUser}
+                        onChange={(e) => setTypeUser(e.target.value)}
+                      >
+                        <option value="">Sélectionnez votre profil</option>
+                        <option value="1">👤 Citoyen / Visiteur</option>
+                        <option value="2">🔧 Technicien</option>
+                        <option value="3">🏢 Entreprise</option>
+                      </select>
+                      <p className="field-hint">Choisissez le type qui correspond à votre profil</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label htmlFor="email">
-                    Adresse Email <span className="required">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    placeholder="exemple@domaine.mg"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                  <div className="input-hint">Une adresse email valide</div>
+              )}
+
+              {/* Step 2: Security */}
+              {step === 2 && (
+                <div className="form-step fade-in">
+                  <div className="step-content">
+                    <div className="security-tips">
+                      <h3>Conseils pour un mot de passe fort</h3>
+                      <ul>
+                        <li>Minimum 8 caractères</li>
+                        <li>Majuscules et minuscules mélangées</li>
+                        <li>Incluez des chiffres et caractères spéciaux</li>
+                        <li>Évitez vos données personnelles</li>
+                      </ul>
+                    </div>
+
+                    <div className="form-field">
+                      <label htmlFor="password">
+                        Mot de passe <span className="required">*</span>
+                      </label>
+                      <div className="input-wrapper">
+                        <input
+                          type="password"
+                          id="password"
+                          placeholder="••••••••"
+                          required
+                          minLength={8}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                        />
+                      </div>
+                      {password && (
+                        <div className="password-strength-indicator">
+                          <div className={`strength-bar strength-${passwordStrength}`}></div>
+                          <span className={`strength-label strength-${passwordStrength}`}>
+                            {passwordStrength === "weak" && "Faible"}
+                            {passwordStrength === "medium" && "Moyen"}
+                            {passwordStrength === "strong" && "Fort"}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="form-field">
+                      <label htmlFor="confirmPassword">
+                        Confirmer le mot de passe <span className="required">*</span>
+                      </label>
+                      <div className="input-wrapper">
+                        <input
+                          type="password"
+                          id="confirmPassword"
+                          placeholder="••••••••"
+                          required
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                        />
+                      </div>
+                      {confirmPassword && password === confirmPassword && (
+                        <p className="field-success">✓ Les mots de passe correspondent</p>
+                      )}
+                      {confirmPassword && password !== confirmPassword && (
+                        <p className="field-error">✗ Les mots de passe ne correspondent pas</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="form-group">
-                <label htmlFor="typeUser">
-                  Type de compte <span className="required">*</span>
-                </label>
-                <select id="typeUser" required value={typeUser} onChange={(e) => setTypeUser(e.target.value)}>
-                  <option value="">-- Sélectionnez un type de compte --</option>
-                  <option value="1">👤 Citoyen / visiteur</option>
-                  <option value="2">🔧 Technicien</option>
-                  <option value="3">🏢 Entreprise</option>
-                </select>
-                <div className="input-hint">Choisissez le type correspondant à votre profil</div>
-              </div>
-            </div>
-            {/* Étape 2: Sécurité */}
-            <div className={`form-step ${step === 2 ? "active" : ""}`} data-step="2">
-              <h2 style={{ marginBottom: 20, color: "#333" }}>🔒 Sécurité du compte</h2>
-              <div className="info-box">
-                <h3>💡 Conseils pour un mot de passe sûr</h3>
-                <ul>
-                  <li>Au moins 8 caractères</li>
-                  <li>Mélangez majuscules et minuscules</li>
-                  <li>Incluez des chiffres et caractères spéciaux</li>
-                  <li>Évitez les mots du dictionnaire</li>
-                </ul>
-              </div>
-              <div className="form-group">
-                <label htmlFor="password">
-                  Mot de passe <span className="required">*</span>
-                </label>
-                <input
-                  type="password"
-                  id="password"
-                  placeholder="••••••••"
-                  required
-                  minLength={8}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-                <div className="password-strength">
-                  <div className="password-strength-bar" id="strengthBar"></div>
+              )}
+
+              {/* Step 3: Confirmation */}
+              {step === 3 && (
+                <div className="form-step fade-in">
+                  <div className="step-content">
+                    <div className="confirmation-summary">
+                      <h3>Vérifiez vos informations</h3>
+                      <div className="summary-item">
+                        <span className="label">Nom d'utilisateur</span>
+                        <span className="value">{username}</span>
+                      </div>
+                      <div className="summary-item">
+                        <span className="label">Email</span>
+                        <span className="value">{email}</span>
+                      </div>
+                      <div className="summary-item">
+                        <span className="label">Type de compte</span>
+                        <span className="value">{typeUserLabels[typeUser]}</span>
+                      </div>
+                    </div>
+
+                    <div className="form-field checkbox-field">
+                      <label htmlFor="acceptTerms" className="checkbox-label">
+                        <input
+                          type="checkbox"
+                          id="acceptTerms"
+                          required
+                          checked={acceptTerms}
+                          onChange={(e) => setAcceptTerms(e.target.checked)}
+                        />
+                        <span>
+                          J'accepte les <a href="#" target="_blank" rel="noopener">conditions d'utilisation</a> et la{" "}
+                          <a href="#" target="_blank" rel="noopener">politique de confidentialité</a>
+                          <span className="required">*</span>
+                        </span>
+                      </label>
+                    </div>
+
+                    <div className="form-field checkbox-field">
+                      <label htmlFor="newsletter" className="checkbox-label">
+                        <input
+                          type="checkbox"
+                          id="newsletter"
+                          checked={newsletter}
+                          onChange={(e) => setNewsletter(e.target.checked)}
+                        />
+                        <span>Je souhaite recevoir les mises à jour par email</span>
+                      </label>
+                    </div>
+                  </div>
                 </div>
-                <div className="input-hint" id="passwordHint">Minimum 8 caractères</div>
+              )}
+
+              <div className="form-actions">
+                {step > 1 && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={prevStep}
+                    disabled={loading}
+                  >
+                    ← Précédent
+                  </button>
+                )}
+                {step < 3 && (
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={nextStep}
+                    disabled={loading}
+                  >
+                    Suivant →
+                  </button>
+                )}
+                {step === 3 && (
+                  <button
+                    type="submit"
+                    className="btn btn-primary btn-submit"
+                    disabled={loading}
+                  >
+                    {loading ? "Création du compte..." : "Créer mon compte"}
+                  </button>
+                )}
               </div>
-              <div className="form-group">
-                <label htmlFor="confirmPassword">
-                  Confirmer le mot de passe <span className="required">*</span>
-                </label>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  placeholder="••••••••"
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                />
-                <div className="input-hint">Doit correspondre au mot de passe</div>
-              </div>
+            </form>
+
+            <div className="login-prompt">
+              Vous avez déjà un compte ? <Link to="/">Se connecter</Link>
             </div>
-            {/* Étape 3: Confirmation */}
-            <div className={`form-step ${step === 3 ? "active" : ""}`} data-step="3">
-              <h2 style={{ marginBottom: 20, color: "#333" }}>✅ Confirmation</h2>
-              <div className="info-box">
-                <h3>📋 Récapitulatif de votre inscription</h3>
-                <ul>
-                  <li>
-                    <strong>Nom d'utilisateur:</strong> <span id="summaryUsername">{username}</span>
-                  </li>
-                  <li>
-                    <strong>Email:</strong> <span id="summaryEmail">{email}</span>
-                  </li>
-                  <li>
-                    <strong>Type de compte:</strong> <span id="summaryType">{typeUser || "-"}</span>
-                  </li>
-                </ul>
-              </div>
-              <div className="checkbox-group">
-                <input type="checkbox" id="acceptTerms" required checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)} />
-                <label htmlFor="acceptTerms">
-                  J'accepte les <a href="#" target="_blank">conditions d'utilisation</a> et la <a href="#" target="_blank">politique de confidentialité</a> <span className="required">*</span>
-                </label>
-              </div>
-              <div className="checkbox-group">
-                <input type="checkbox" id="newsletter" checked={newsletter} onChange={(e) => setNewsletter(e.target.checked)} />
-                <label htmlFor="newsletter">Je souhaite recevoir les notifications par email</label>
-              </div>
-            </div>
-            <div className="form-actions">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                id="btnPrevious"
-                style={{ display: step === 1 ? "none" : "inline-flex" }}
-                onClick={prevStep}
-                disabled={loading}
-              >
-                ← Précédent
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary"
-                id="btnNext"
-                style={{ display: step === 3 ? "none" : "inline-flex" }}
-                onClick={nextStep}
-                disabled={loading}
-              >
-                Suivant →
-              </button>
-              <button
-                type="submit"
-                className="btn btn-primary"
-                id="btnSubmit"
-                style={{ display: step === 3 ? "inline-flex" : "none" }}
-                disabled={loading}
-              >
-                {loading ? "Création…" : "✅ Créer mon compte"}
-              </button>
-            </div>
-          </form>
-          <div className="login-link">
-            Vous avez déjà un compte ? <Link to="/">Se connecter</Link>
-          </div>
-        </div>
+      </div>
       </div>
     </div>
   );
