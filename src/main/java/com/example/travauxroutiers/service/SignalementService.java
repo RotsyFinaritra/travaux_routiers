@@ -1,16 +1,17 @@
 package com.example.travauxroutiers.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
 import com.example.travauxroutiers.model.Signalement;
-import com.example.travauxroutiers.model.Status;
 import com.example.travauxroutiers.model.SignalementStatus;
+import com.example.travauxroutiers.model.Status;
 import com.example.travauxroutiers.repository.SignalementRepository;
-import com.example.travauxroutiers.repository.StatusRepository;
 import com.example.travauxroutiers.repository.SignalementStatusRepository;
+import com.example.travauxroutiers.repository.StatusRepository;
 
 @Service
 public class SignalementService implements GenericService<Signalement, Long> {
@@ -42,6 +43,11 @@ public class SignalementService implements GenericService<Signalement, Long> {
     }
 
     public Signalement create(Signalement t) {
+        // S'assurer que createdAt est défini
+        if (t.getCreatedAt() == null) {
+            t.setCreatedAt(LocalDateTime.now());
+        }
+
         Signalement saved = repo.save(t);
         try {
             validationService.ensureForSignalement(saved);
@@ -51,10 +57,10 @@ public class SignalementService implements GenericService<Signalement, Long> {
 
         // Créer une entrée dans signalement_status pour le statut initial
         if (saved.getStatus() != null) {
-            SignalementStatus statusEntry = new SignalementStatus();
-            statusEntry.setSignalement(saved);
-            statusEntry.setStatus(saved.getStatus());
-            statusEntry.setComment("Création du signalement");
+            SignalementStatus statusEntry = SignalementStatus.createEntry(
+                    saved,
+                    saved.getStatus(),
+                    "Création du signalement");
             signalementStatusRepository.save(statusEntry);
         }
 
@@ -86,16 +92,19 @@ public class SignalementService implements GenericService<Signalement, Long> {
 
             // Si le statut a changé, créer une entrée dans signalement_status
             if (t.getStatus() != null && (oldStatus == null || !oldStatus.getId().equals(t.getStatus().getId()))) {
-                SignalementStatus statusEntry = new SignalementStatus();
-                statusEntry.setSignalement(updated);
-                statusEntry.setStatus(t.getStatus());
-                statusEntry.setComment("Modification du signalement");
+                SignalementStatus statusEntry = SignalementStatus.createEntry(
+                        updated,
+                        t.getStatus(),
+                        "Modification du signalement");
                 signalementStatusRepository.save(statusEntry);
             }
 
             return updated;
         }).orElseGet(() -> {
             t.setId(id);
+            if (t.getCreatedAt() == null) {
+                t.setCreatedAt(LocalDateTime.now());
+            }
             return repo.save(t);
         });
     }
@@ -114,10 +123,10 @@ public class SignalementService implements GenericService<Signalement, Long> {
             Signalement updated = repo.save(signalement);
 
             // Créer une entrée dans signalement_status pour le changement de statut
-            SignalementStatus statusEntry = new SignalementStatus();
-            statusEntry.setSignalement(updated);
-            statusEntry.setStatus(newStatus);
-            statusEntry.setComment("Changement de statut via bouton rapide");
+            SignalementStatus statusEntry = SignalementStatus.createEntry(
+                    updated,
+                    newStatus,
+                    "Changement de statut via bouton rapide");
             signalementStatusRepository.save(statusEntry);
 
             return updated;

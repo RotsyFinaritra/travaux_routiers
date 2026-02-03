@@ -1,8 +1,17 @@
 package com.example.travauxroutiers.model;
 
-import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 
 @Entity
 public class Signalement {
@@ -50,34 +59,116 @@ public class Signalement {
     private Validation validation;
 
     // ...getters/setters...
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public User getUser() { return user; }
-    public void setUser(User user) { this.user = user; }
-    public Status getStatus() { return status; }
-    public void setStatus(Status status) { this.status = status; }
-    public Entreprise getEntreprise() { return entreprise; }
-    public void setEntreprise(Entreprise entreprise) { this.entreprise = entreprise; }
-    public BigDecimal getLatitude() { return latitude; }
-    public void setLatitude(BigDecimal latitude) { this.latitude = latitude; }
-    public BigDecimal getLongitude() { return longitude; }
-    public void setLongitude(BigDecimal longitude) { this.longitude = longitude; }
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-    public LocalDateTime getDateSignalement() { return dateSignalement; }
-    public void setDateSignalement(LocalDateTime dateSignalement) { this.dateSignalement = dateSignalement; }
-    public BigDecimal getSurfaceArea() { return surfaceArea; }
-    public void setSurfaceArea(BigDecimal surfaceArea) { this.surfaceArea = surfaceArea; }
-    public BigDecimal getBudget() { return budget; }
-    public void setBudget(BigDecimal budget) { this.budget = budget; }
-    public String getPhotoUrl() { return photoUrl; }
-    public void setPhotoUrl(String photoUrl) { this.photoUrl = photoUrl; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getFirebaseDocId() { return firebaseDocId; }
-    public void setFirebaseDocId(String firebaseDocId) { this.firebaseDocId = firebaseDocId; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    
+    public User getUser() {
+        return user;
+    }
 
-    public Validation getValidation() { return validation; }
-    public void setValidation(Validation validation) { this.validation = validation; }
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
+    public Entreprise getEntreprise() {
+        return entreprise;
+    }
+
+    public void setEntreprise(Entreprise entreprise) {
+        this.entreprise = entreprise;
+    }
+
+    public BigDecimal getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(BigDecimal latitude) {
+        this.latitude = latitude;
+    }
+
+    public BigDecimal getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(BigDecimal longitude) {
+        this.longitude = longitude;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public LocalDateTime getDateSignalement() {
+        return dateSignalement;
+    }
+
+    public void setDateSignalement(LocalDateTime dateSignalement) {
+        this.dateSignalement = dateSignalement;
+    }
+
+    public BigDecimal getSurfaceArea() {
+        return surfaceArea;
+    }
+
+    public void setSurfaceArea(BigDecimal surfaceArea) {
+        this.surfaceArea = surfaceArea;
+    }
+
+    public BigDecimal getBudget() {
+        return budget;
+    }
+
+    public void setBudget(BigDecimal budget) {
+        this.budget = budget;
+    }
+
+    public String getPhotoUrl() {
+        return photoUrl;
+    }
+
+    public void setPhotoUrl(String photoUrl) {
+        this.photoUrl = photoUrl;
+    }
+
+    public String getFirebaseDocId() {
+        return firebaseDocId;
+    }
+
+    public void setFirebaseDocId(String firebaseDocId) {
+        this.firebaseDocId = firebaseDocId;
+    }
+
+    public Validation getValidation() {
+        return validation;
+    }
+
+    public void setValidation(Validation validation) {
+        this.validation = validation;
+    }
+
+    // Méthode pour compatibilité avec les statistiques
+    public LocalDateTime getCreatedAt() {
+        return dateSignalement;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.dateSignalement = createdAt;
+    }
 }

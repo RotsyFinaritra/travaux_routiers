@@ -1,14 +1,39 @@
 import React from "react";
 import Sidebar from "../components/Sidebar";
 import StatsRecap from "../components/StatsRecap";
-import "../styles/dashboard.css";
 import { syncFirebaseSignalements, syncLocalToFirebase } from "../services/firebaseSyncApi";
+import { getGlobalStatistics, testApiConnectivity } from "../services/statisticsApi";
+import "../styles/dashboard.css";
 
 const ManagerDashboard: React.FC = () => {
   const [syncing, setSyncing] = React.useState(false);
   const [syncMsg, setSyncMsg] = React.useState<string | null>(null);
   const [reverseSyncing, setReverseSyncing] = React.useState(false);
   const [reverseSyncMsg, setReverseSyncMsg] = React.useState<string | null>(null);
+  const [testResult, setTestResult] = React.useState<string | null>(null);
+
+  async function onTestApiClick() {
+    try {
+      console.log("🧪 Test complet de l'API statistiques...");
+      setTestResult("🔄 Test en cours...");
+      
+      // Test 1: Connectivité de base
+      const isConnected = await testApiConnectivity();
+      if (!isConnected) {
+        setTestResult("❌ Erreur: API non accessible (serveur arrêté ?)");
+        return;
+      }
+      
+      // Test 2: Récupération des statistiques
+      const stats = await getGlobalStatistics();
+      setTestResult(`✅ API OK - ${stats.totalPoints} signalements trouvés`);
+      console.log("✅ Test réussi:", stats);
+      
+    } catch (error) {
+      console.error("❌ Test échoué:", error);
+      setTestResult(`❌ Erreur complète: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+    }
+  }
 
   async function onSyncClick() {
     setSyncing(true);
@@ -64,6 +89,15 @@ const ManagerDashboard: React.FC = () => {
                 {reverseSyncing ? "⏳ Synchronisation..." : "📤 Synchroniser Local → Firebase"}
               </button>
               {reverseSyncMsg ? <span style={{ fontSize: 14 }}>{reverseSyncMsg}</span> : null}
+              
+              <button className="btn-back" onClick={onTestApiClick} style={{ background: "#007bff" }}>
+                🧪 Tester API Statistiques
+              </button>
+              {testResult ? <span style={{ fontSize: 14, fontWeight: "bold" }}>{testResult}</span> : null}
+              
+              <a href="/statistiques-traitement" className="btn-back" style={{ background: "#28a745", textDecoration: "none" }}>
+                📈 Voir les statistiques de traitement
+              </a>
             </div>
           </header>
           
