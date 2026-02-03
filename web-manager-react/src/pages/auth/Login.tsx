@@ -30,26 +30,18 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="login-container">
-      <div className="login-visual">
-        <div className="visual-icon" role="img" aria-label="Carte">🗺️</div>
-        <h2>Bienvenue</h2>
-        <p>
-          Connectez-vous pour accéder à la plateforme de gestion des signalements
-          d'Antananarivo
-        </p>
-      </div>
-      <div className="login-form">
-        <div className="form-header">
-          <h1>🔐 Connexion</h1>
+      <div className="login-content-wrapper">
+        <div className="login-header">
+          <h1>Connexion</h1>
           <p>Entrez vos identifiants pour accéder à votre compte</p>
         </div>
         {error && (
-          <div className="alert alert-error login-alert" role="alert" style={{ marginBottom: 16 }}>
-            {error}
+          <div className="alert-banner alert-error" role="alert">
+            <span>{error}</span>
           </div>
         )}
         <form onSubmit={onSubmit}>
-          <div className="form-group">
+          <div className="form-field">
             <label htmlFor="email">Adresse Email</label>
             <div className="input-wrapper">
               <input
@@ -62,10 +54,9 @@ const LoginPage: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
-              <span className="input-icon" role="img" aria-label="Email">📧</span>
             </div>
           </div>
-          <div className="form-group">
+          <div className="form-field">
             <label htmlFor="password">Mot de passe</label>
             <div className="input-wrapper">
               <input
@@ -78,26 +69,22 @@ const LoginPage: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-              <span className="toggle-password" role="img" aria-label="Afficher le mot de passe">👁️</span>
             </div>
           </div>
           <div className="form-options">
-            <label className="remember-me">
+            <label className="checkbox-label">
               <input type="checkbox" id="rememberMe" name="rememberMe" />
               <span>Se souvenir de moi</span>
             </label>
-            <a href="#" className="forgot-password">
+            <a href="#" className="forgot-link">
               Mot de passe oublié ?
             </a>
           </div>
-          <button type="submit" className="btn-login" disabled={loading}>
+          <button type="submit" className="btn btn-primary" disabled={loading}>
             {loading ? "Connexion…" : "Se connecter"}
           </button>
         </form>
-        <div className="divider">
-          <span>OU</span>
-        </div>
-        <div className="signup-link">
+        <div className="signup-prompt">
           Pas encore de compte ? <Link to="/inscription">Créer un compte</Link>
         </div>
       </div>

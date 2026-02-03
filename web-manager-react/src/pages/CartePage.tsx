@@ -56,7 +56,7 @@ const CartePage: React.FC = () => {
         <div className="container">
           {/* Tableau de récapitulation */}
           <div className="summary-section">
-            <h2>📊 Tableau de Récapitulation</h2>
+            <h2>Tableau de Récapitulation</h2>
             <StatsRecap
               totalPoints={totalPoints}
               totalSurface={totalSurface}
