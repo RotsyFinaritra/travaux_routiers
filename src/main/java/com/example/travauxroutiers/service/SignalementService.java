@@ -43,11 +43,7 @@ public class SignalementService implements GenericService<Signalement, Long> {
 
     public Signalement create(Signalement t) {
         Signalement saved = repo.save(t);
-        try {
-            validationService.ensureForSignalement(saved);
-        } catch (Exception ex) {
-            // do not fail create on validation init error; log if needed
-        }
+        validationService.ensureForSignalement(saved);
 
         // Créer une entrée dans signalement_status pour le statut initial
         if (saved.getStatus() != null) {
@@ -101,7 +97,18 @@ public class SignalementService implements GenericService<Signalement, Long> {
     }
 
     public void delete(Long id) {
-        repo.deleteById(id);
+        repo.findById(id).ifPresent(signalement -> {
+            // 1. Supprimer l'historique de validation s'il existe
+            validationService.getBySignalement(id).ifPresent(validation -> {
+                validationService.deleteValidationWithHistory(validation.getId());
+            });
+            
+            // 2. Supprimer les entrées de signalement_status
+            signalementStatusRepository.deleteBySignalementId(id);
+            
+            // 3. Supprimer le signalement lui-même
+            repo.deleteById(id);
+        });
     }
 
     public Signalement updateStatus(Long id, Long statusId) {
