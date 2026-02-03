@@ -1,0 +1,344 @@
+/* User List - Design uniforme basé sur Login */
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.users-table-container {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+  min-height: 360px;
+  max-height: 65vh;
+  -webkit-overflow-scrolling: touch;
+}
+
+.form-container {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 35px;
+  margin: 25px 0;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+  border: 2px solid #e1e8ed;
+}
+
+.user-form {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.form-group {
+  margin-bottom: 25px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: #34495e;
+  font-size: 14px;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e1e8ed;
+  border-radius: 10px;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  background: #f8f9fa;
+  color: #2c3e50;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #3498db;
+  outline: none;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.form-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 35px;
+  padding-top: 25px;
+  border-top: 2px solid #e1e8ed;
+}
+
+.btn-cancel {
+  background: #f8f9fa;
+  color: #34495e;
+  border: 2px solid #e1e8ed;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 15px;
+}
+
+.btn-cancel:hover {
+  background: #e1e8ed;
+  color: #2c3e50;
+  transform: translateY(-2px);
+}
+
+.btn-update {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: #ffffff;
+  border: 2px solid #3498db;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 15px;
+}
+
+.btn-update:hover {
+  background: linear-gradient(135deg, #2980b9, #21618c);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+}
+
+.actions-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 25px;
+  padding: 15px 0;
+}
+
+.btn-create {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: #ffffff;
+  border: 2px solid #3498db;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-create:hover {
+  background: linear-gradient(135deg, #2980b9, #21618c);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+}
+
+.users-table {
+  width: 100%;
+  min-width: 900px;
+  border-collapse: collapse;
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid #e1e8ed;
+  margin-bottom: 20px;
+}
+
+.users-table th {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: #ffffff;
+  padding: 14px 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.users-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #e1e8ed;
+  vertical-align: middle;
+  font-size: 13px;
+  color: #2c3e50;
+}
+
+.users-table tr:hover {
+  background-color: #f8f9fa;
+}
+
+.users-table tr:last-child td {
+  border-bottom: none;
+}
+
+.username {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.email {
+  color: #7f8c8d;
+  font-style: italic;
+}
+
+.type-badge {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  border: 2px solid;
+}
+
+.type-manager {
+  background: #fee;
+  color: #c0392b;
+  border-color: #e74c3c;
+}
+
+.type-user {
+  background: #e3f2fd;
+  color: #2980b9;
+  border-color: #3498db;
+}
+
+.status-badge {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 2px solid;
+}
+
+.status-active {
+  background: #d4edda;
+  color: #1e8449;
+  border-color: #27ae60;
+}
+
+.status-blocked {
+  background: #fee;
+  color: #c0392b;
+  border-color: #e74c3c;
+}
+
+.last-login {
+  font-size: 13px;
+  color: #7f8c8d;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.btn-action {
+  background: #f8f9fa;
+  border: 2px solid #e1e8ed;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  color: #34495e;
+}
+
+.btn-action:hover {
+  background: #e1e8ed;
+  color: #2c3e50;
+}
+
+.btn-edit:hover {
+  background: #fff3cd;
+  border-color: #f39c12;
+  color: #856404;
+}
+
+.btn-unlock:hover {
+  background: #e3f2fd;
+  border-color: #3498db;
+  color: #2980b9;
+}
+
+.btn-delete:hover {
+  background: #fee;
+  border-color: #e74c3c;
+  color: #c0392b;
+}
+
+.summary {
+  display: flex;
+  justify-content: space-around;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 25px;
+  margin: 25px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 2px solid #e1e8ed;
+}
+
+.summary-item {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.summary-label {
+  font-size: 14px;
+  color: #7f8c8d;
+  font-weight: 500;
+}
+
+.summary-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.navigation-links {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.nav-link {
+  padding: 12px 20px;
+  background: #ffffff;
+  color: #3498db;
+  text-decoration: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 2px solid #e1e8ed;
+  transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: #ffffff;
+  border-color: #3498db;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .form-container {
+    padding: 25px 20px;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .summary {
+    flex-direction: column;
+    gap: 20px;
+  }
+}

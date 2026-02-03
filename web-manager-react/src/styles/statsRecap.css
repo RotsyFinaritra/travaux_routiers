@@ -1,0 +1,239 @@
+/* Stats Recap - Design uniforme basé sur Login */
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.stat-card {
+  background: #ffffff;
+  border: 2px solid #e1e8ed;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.12);
+  border-color: #3498db;
+  transform: translateY(-3px);
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  border-radius: 10px;
+  color: #ffffff;
+  box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+}
+
+.stat-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.stat-label {
+  color: #7f8c8d;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: #2c3e50;
+  line-height: 1;
+  margin-bottom: 5px;
+}
+
+.stat-subtitle {
+  color: #95a5a6;
+  font-size: 11px;
+}
+
+.progress-container {
+  margin-top: 10px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 10px;
+  background: #e1e8ed;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #27ae60, #229954);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 10px;
+  transition: width 0.4s ease;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-bottom: 0;
+}
+
+.summary-card {
+  background: #ffffff;
+  border: 2px solid #e1e8ed;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.summary-card:hover {
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.summary-card.nouveau {
+  border-color: #e74c3c;
+}
+
+.summary-card.nouveau:hover {
+  border-color: #c0392b;
+}
+
+.summary-card.encours {
+  border-color: #f39c12;
+}
+
+.summary-card.encours:hover {
+  border-color: #e67e22;
+}
+
+.summary-card.termine {
+  border-color: #27ae60;
+}
+
+.summary-card.termine:hover {
+  border-color: #229954;
+}
+
+.summary-label {
+  font-size: 11px;
+  margin-bottom: 10px;
+  color: #7f8c8d;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summary-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 25px;
+  margin-bottom: 25px;
+}
+
+.chart-container {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 28px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+  border: 2px solid #e1e8ed;
+}
+
+.chart-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: #2c3e50;
+  text-align: center;
+}
+
+.table-container {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 28px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+  overflow-x: auto;
+  margin-bottom: 25px;
+  border: 2px solid #e1e8ed;
+}
+
+.table-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: #2c3e50;
+}
+
+#signalementTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#signalementTable thead tr {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: #ffffff;
+}
+
+#signalementTable thead th {
+  padding: 14px 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+#signalementTable tbody tr {
+  border-bottom: 1px solid #e1e8ed;
+}
+
+#signalementTable tbody tr:hover {
+  background: #f8f9fa;
+}
+
+#signalementTable tbody td {
+  padding: 14px 16px;
+  font-size: 13px;
+  color: #2c3e50;
+}
+
+@media (max-width: 1200px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .stats-grid,
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+}
