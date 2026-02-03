@@ -6,6 +6,7 @@ import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import Inscription from './pages/auth/Inscription';
 import CartePage from './pages/CartePage';
 import ManagerDashboard from './pages/Dashboard';
+import TreatmentStatsPage from './pages/TreatmentStatsPage';
 import PublicHome from './pages/PublicHome';
 import AddSignalement from './pages/signalement/AddSignalement';
 import EditSignalement from './pages/signalement/EditSignalement';
@@ -41,6 +42,7 @@ function App() {
         <Route path="/entreprises/creer" element={<RequireRole allowed={["MANAGER"]}><CreateEntreprise /></RequireRole>} />
         <Route path="/entreprises/modifier/:id" element={<RequireRole allowed={["MANAGER"]}><EditEntreprise /></RequireRole>} />
         <Route path="/tableau" element={<RequireRole allowed={["MANAGER"]}><ManagerDashboard /></RequireRole>} />
+        <Route path="/statistiques-traitement" element={<RequireRole allowed={["MANAGER"]}><TreatmentStatsPage /></RequireRole>} />
         <Route path="/signalements" element={<RequireAuth><SignalementList /></RequireAuth>} />
         <Route path="/signalements/ajouter" element={<RequireAuth><AddSignalement /></RequireAuth>} />
         <Route path="/signalements/modifier/:id" element={<RequireAuth><EditSignalement /></RequireAuth>} />

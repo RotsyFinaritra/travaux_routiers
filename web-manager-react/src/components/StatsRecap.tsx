@@ -1,31 +1,68 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { getGlobalStatistics, type StatisticsDto } from "../services/statisticsApi";
 import "../styles/statsRecap.css";
 
 export interface StatsRecapProps {
-  totalPoints?: number;
-  totalSurface?: number;
-  totalBudget?: number;
-  progressPercent?: string;
-  countNouveau?: number;
-  countEnCours?: number;
-  countTermine?: number;
-  loading?: boolean;
   showCharts?: boolean;
   showDetailedTable?: boolean;
 }
 
 const StatsRecap: React.FC<StatsRecapProps> = ({
-  totalPoints = 0,
-  totalSurface = 0,
-  totalBudget = 0,
-  progressPercent = "0",
-  countNouveau = 0,
-  countEnCours = 0,
-  countTermine = 0,
-  loading = false,
   showCharts = false,
   showDetailedTable = false,
 }) => {
+  const [stats, setStats] = useState<StatisticsDto | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Chargement automatique au montage du composant
+  useEffect(() => {
+    loadStatistics();
+  }, []);
+
+  const loadStatistics = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log("🔄 Chargement des statistiques...");
+      
+      // Timeout personnalisé de 15 secondes
+      const timeoutId = setTimeout(() => {
+        setError("Timeout: Les statistiques n'ont pas pu être chargées dans les temps impartis");
+        setLoading(false);
+      }, 15000);
+      
+      const statistics = await getGlobalStatistics();
+      clearTimeout(timeoutId);
+      
+      console.log("✅ Statistiques reçues:", statistics);
+      setStats(statistics);
+    } catch (err) {
+      console.error("❌ Erreur lors du chargement des statistiques:", err);
+      setError(`Erreur lors du chargement des statistiques: ${err instanceof Error ? err.message : 'Erreur inconnue'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Supprimer les conditions de chargement - afficher directement le contenu
+  // if (loading) { ... }
+  // if (error) { ... }
+
+  // Utiliser des valeurs par défaut si stats est null
+  const {
+    totalPoints = 0,
+    totalSurfaceArea = 0,
+    totalBudget = 0,
+    progressPercent = 0,
+    countNouveau = 0,
+    countEnCours = 0,
+    countTermine = 0,
+    statusStats = [],
+    treatmentStats = [],
+    averageTreatmentDays = 0
+  } = stats || {};
+
   return (
     <>
       {/* Statistiques principales */}
@@ -50,7 +87,7 @@ const StatsRecap: React.FC<StatsRecapProps> = ({
             </svg>
           </div>
           <div className="stat-label">Surface Totale</div>
-          <div className="stat-value">{loading ? "..." : totalSurface.toLocaleString()}</div>
+          <div className="stat-value">{loading ? "..." : totalSurfaceArea.toLocaleString()}</div>
           <div className="stat-subtitle">Mètres carrés (m²)</div>
         </div>
         <div className="stat-card">
@@ -71,12 +108,12 @@ const StatsRecap: React.FC<StatsRecapProps> = ({
             </svg>
           </div>
           <div className="stat-label">Avancement</div>
-          <div className="stat-value">{loading ? "..." : `${progressPercent}%`}</div>
+          <div className="stat-value">{loading ? "..." : `${progressPercent.toFixed(1)}%`}</div>
           <div className="stat-subtitle">Travaux complétés</div>
           <div className="progress-container">
             <div className="progress-bar">
               <div className="progress-fill" style={{ width: `${progressPercent}%` }}>
-                {progressPercent}%
+                {progressPercent.toFixed(1)}%
               </div>
             </div>
           </div>
@@ -100,7 +137,7 @@ const StatsRecap: React.FC<StatsRecapProps> = ({
       </div>
 
       {/* Graphiques (optionnels) */}
-      {showCharts && (
+      {showCharts && stats && statusStats.length > 0 && (
         <div className="charts-grid">
           <div className="chart-container">
             <div className="chart-title">Répartition par Statut</div>
@@ -114,23 +151,29 @@ const StatsRecap: React.FC<StatsRecapProps> = ({
       )}
 
       {/* Tableau détaillé (optionnel) */}
-      {showDetailedTable && (
+      {showDetailedTable && stats && statusStats.length > 0 && (
         <div className="table-container">
-          <div className="table-title">Détails des Signalements</div>
-          <table id="signalementTable">
+          <div className="table-title">Statistiques Détaillées par Statut</div>
+          <table className="status-stats-table">
             <thead>
               <tr>
-                <th>#</th>
-                <th>Description</th>
-                <th>Date</th>
                 <th>Statut</th>
-                <th>Surface (m²)</th>
-                <th>Budget (MGA)</th>
-                <th>Entreprise</th>
+                <th>Nombre</th>
+                <th>Pourcentage</th>
+                <th>Surface totale (m²)</th>
+                <th>Budget total (MGA)</th>
               </tr>
             </thead>
-            <tbody id="tableBody">
-              {/* Données chargées dynamiquement */}
+            <tbody>
+              {statusStats.map((stat, index) => (
+                <tr key={index}>
+                  <td>{stat.statusName}</td>
+                  <td>{stat.count}</td>
+                  <td>{stat.percentage.toFixed(1)}%</td>
+                  <td>{stat.totalSurface.toLocaleString()}</td>
+                  <td>{stat.totalBudget.toLocaleString()}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

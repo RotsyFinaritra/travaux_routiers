@@ -112,4 +112,17 @@ public class SignalementController {
         service.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/reset-all")
+    @Operation(summary = "Effacer tous les signalements et créer de nouveaux exemples")
+    public ResponseEntity<Map<String, Object>> resetAllSignalements() {
+        try {
+            logger.info("[SignalementController] Reset all signalements request");
+            // Map<String, Object> result = service.resetAllSignalements();
+            return ResponseEntity.ok(Map.of("message", "Fonction de réinitialisation non implémentée"));
+        } catch (Exception ex) {
+            logger.error("[SignalementController] POST /api/signalements/reset-all failed", ex);
+            return ResponseEntity.status(500).body(Map.of("error", ex.getMessage()));
+        }
+    }
 }
