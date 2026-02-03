@@ -54,6 +54,9 @@ public class Signalement {
 
     @Column(name = "firebase_doc_id", unique = true, length = 64)
     private String firebaseDocId;
+    
+    @Column(name = "user_uid", length = 128)
+    private String userUid;
 
     @OneToOne(mappedBy = "signalement", cascade = CascadeType.ALL)
     private Validation validation;
@@ -153,6 +156,14 @@ public class Signalement {
 
     public void setFirebaseDocId(String firebaseDocId) {
         this.firebaseDocId = firebaseDocId;
+    }
+    
+    public String getUserUid() {
+        return userUid;
+    }
+    
+    public void setUserUid(String userUid) {
+        this.userUid = userUid;
     }
 
     public Validation getValidation() {

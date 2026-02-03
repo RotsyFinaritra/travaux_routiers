@@ -241,6 +241,12 @@ public class FirebaseSignalementSyncService {
                 existing.setUser(localUser);
                 changed = true;
             }
+            
+            // Update userUid field
+            if (!java.util.Objects.equals(existing.getUserUid(), userUid)) {
+                existing.setUserUid(userUid);
+                changed = true;
+            }
 
             // Optional fields: surfaceArea, budget, photoUrl
             Double surfaceArea = doc.getDouble("surfaceArea");
@@ -278,6 +284,7 @@ public class FirebaseSignalementSyncService {
         Signalement s = new Signalement();
         s.setFirebaseDocId(doc.getId());
         s.setUser(localUser);
+        s.setUserUid(userUid);
         s.setStatus(status);
         s.setLatitude(BigDecimal.valueOf(lat));
         s.setLongitude(BigDecimal.valueOf(lng));

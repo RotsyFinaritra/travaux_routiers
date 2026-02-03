@@ -2,6 +2,7 @@ package com.example.travauxroutiers.service;
 
 import com.example.travauxroutiers.model.*;
 import com.example.travauxroutiers.repository.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -15,6 +16,9 @@ public class ValidationService {
     private final ValidationHistoryRepository historyRepository;
     private final SignalementRepository signalementRepository;
     private final UserRepository userRepository;
+    
+    @Autowired(required = false)
+    private PushNotificationService pushNotificationService;
 
     public ValidationService(ValidationRepository validationRepository,
                              ValidationStatusRepository statusRepository,
@@ -70,6 +74,19 @@ public class ValidationService {
         hist.setToStatus(to);
         hist.setNote(note);
         historyRepository.save(hist);
+        
+        // Send push notification if service is available
+        if (pushNotificationService != null && !to.getName().equals("PENDING")) {
+            String userUid = s.getUserUid();
+            if (userUid != null && !userUid.isEmpty()) {
+                pushNotificationService.sendValidationStatusChangeNotification(
+                    userUid,
+                    s.getId(),
+                    to.getName(),
+                    note
+                );
+            }
+        }
 
         return saved;
     }
