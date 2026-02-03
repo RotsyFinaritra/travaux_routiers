@@ -37,7 +37,7 @@ public class StatisticsService {
             System.out.println("🔄 Calcul des statistiques globales...");
             List<Signalement> allSignalements = signalementRepository.findAll();
             System.out.println("📊 Nombre de signalements trouvés: " + allSignalements.size());
-            
+
             StatisticsDto stats = new StatisticsDto();
 
             // Calcul des statistiques de base
@@ -58,7 +58,7 @@ public class StatisticsService {
             // Charger tous les statuts depuis la base de données
             List<Status> allStatuses = statusRepository.findAll();
             System.out.println("📊 Statuts trouvés dans la base: " + allStatuses.size());
-            
+
             // Comptage dynamique par statut
             Map<Long, Long> statusCountsById = allSignalements.stream()
                     .filter(s -> s.getStatus() != null)
@@ -66,23 +66,28 @@ public class StatisticsService {
                             s -> s.getStatus().getId(),
                             Collectors.counting()));
 
-            // Définir les compteurs spécifiques (pour compatibilité avec le frontend actuel)
+            // Définir les compteurs spécifiques (pour compatibilité avec le frontend
+            // actuel)
             int countNouveau = 0;
             int countEnCours = 0;
             int countTermine = 0;
-            
-            // Parcourir tous les statuts pour identifier ceux qui correspondent aux catégories
+
+            // Parcourir tous les statuts pour identifier ceux qui correspondent aux
+            // catégories
             for (Status status : allStatuses) {
                 Long count = statusCountsById.getOrDefault(status.getId(), 0L);
                 String statusName = status.getName().toLowerCase();
-                System.out.println("📊 Statut: " + status.getName() + " (ID: " + status.getId() + ") -> " + count + " signalements");
-                
+                System.out.println("📊 Statut: " + status.getName() + " (ID: " + status.getId() + ") -> " + count
+                        + " signalements");
+
                 // Mapping intelligent basé sur l'ID et le nom
                 if (status.getId() == 1L || statusName.contains("nouveau") || statusName.contains("new")) {
                     countNouveau += count.intValue();
-                } else if (status.getId() == 2L || statusName.contains("cours") || statusName.contains("progress") || statusName.contains("en_cours")) {
+                } else if (status.getId() == 2L || statusName.contains("cours") || statusName.contains("progress")
+                        || statusName.contains("en_cours")) {
                     countEnCours += count.intValue();
-                } else if (status.getId() == 3L || statusName.contains("terminé") || statusName.contains("termine") || statusName.contains("completed") || statusName.contains("fini")) {
+                } else if (status.getId() == 3L || statusName.contains("terminé") || statusName.contains("termine")
+                        || statusName.contains("completed") || statusName.contains("fini")) {
                     countTermine += count.intValue();
                 }
             }
@@ -112,7 +117,7 @@ public class StatisticsService {
         } catch (Exception e) {
             System.err.println("❌ Erreur lors du calcul des statistiques: " + e.getMessage());
             e.printStackTrace();
-            
+
             // Retourner des statistiques vides en cas d'erreur
             StatisticsDto emptyStats = new StatisticsDto();
             emptyStats.setTotalPoints(0);
@@ -154,7 +159,7 @@ public class StatisticsService {
         } else if (statusId == 3L) {
             return 100.0; // TERMINE
         }
-        
+
         // Fallback sur le nom si l'ID ne correspond pas
         String statusName = signalement.getStatus().getName();
         if (statusName != null) {
@@ -163,51 +168,53 @@ public class StatisticsService {
                 return 0.0;
             } else if (statusName.contains("cours") || statusName.contains("progress")) {
                 return 50.0;
-            } else if (statusName.contains("terminé") || statusName.contains("termine") || statusName.contains("completed")) {
+            } else if (statusName.contains("terminé") || statusName.contains("termine")
+                    || statusName.contains("completed")) {
                 return 100.0;
             }
         }
-        
+
         return 0.0; // Par défaut
     }
 
     private List<StatisticsDto.StatusStatistic> calculateStatusStatistics(List<Signalement> signalements) {
         List<StatisticsDto.StatusStatistic> statusStats = new ArrayList<>();
-        
+
         // Charger tous les statuts depuis la base
         List<Status> allStatuses = statusRepository.findAll();
-        
+
         // Calculer les statistiques pour chaque statut
         for (Status status : allStatuses) {
             List<Signalement> signalementsByStatus = signalements.stream()
                     .filter(s -> s.getStatus() != null && s.getStatus().getId().equals(status.getId()))
                     .toList();
-            
+
             int count = signalementsByStatus.size();
             double percentage = signalements.isEmpty() ? 0.0 : (double) count / signalements.size() * 100;
-            
+
             double totalSurface = signalementsByStatus.stream()
                     .filter(s -> s.getSurfaceArea() != null)
                     .mapToDouble(s -> s.getSurfaceArea().doubleValue())
                     .sum();
-            
+
             double totalBudget = signalementsByStatus.stream()
                     .filter(s -> s.getBudget() != null)
                     .mapToDouble(s -> s.getBudget().doubleValue())
                     .sum();
-            
+
             StatisticsDto.StatusStatistic stat = new StatisticsDto.StatusStatistic(
                     status.getName(),
                     count,
                     totalSurface,
                     totalBudget,
                     percentage);
-            
+
             statusStats.add(stat);
-            
-            System.out.println("📊 Statut [" + status.getName() + "]: " + count + " signalements (" + String.format("%.1f", percentage) + "%)");
+
+            System.out.println("📊 Statut [" + status.getName() + "]: " + count + " signalements ("
+                    + String.format("%.1f", percentage) + "%)");
         }
-        
+
         return statusStats;
     }
 
@@ -224,7 +231,7 @@ public class StatisticsService {
         stat.setSignalementId(signalement.getId());
         stat.setDescription(signalement.getDescription());
         stat.setDateCreation(signalement.getCreatedAt());
-        
+
         // Définir le statut actuel
         if (signalement.getStatus() != null) {
             stat.setCurrentStatus(signalement.getStatus().getName());
@@ -263,7 +270,8 @@ public class StatisticsService {
             }
         } catch (Exception e) {
             // Si il y a une erreur avec l'historique, on continue sans
-            System.err.println("Erreur lors de la récupération de l'historique pour le signalement " + signalement.getId() + ": " + e.getMessage());
+            System.err.println("Erreur lors de la récupération de l'historique pour le signalement "
+                    + signalement.getId() + ": " + e.getMessage());
         }
         return stat;
     }
