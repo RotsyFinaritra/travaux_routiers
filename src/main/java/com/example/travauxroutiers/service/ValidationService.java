@@ -77,4 +77,12 @@ public class ValidationService {
     public List<ValidationHistory> historyForValidation(Long validationId) {
         return historyRepository.findByValidationIdOrderByChangedAtDesc(validationId);
     }
+
+    public void deleteValidationWithHistory(Long validationId) {
+        // 1. Supprimer d'abord l'historique de validation
+        historyRepository.deleteByValidationId(validationId);
+        
+        // 2. Supprimer la validation
+        validationRepository.deleteById(validationId);
+    }
 }

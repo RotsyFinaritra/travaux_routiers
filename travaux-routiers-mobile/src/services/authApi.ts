@@ -1,7 +1,7 @@
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import type { FirebaseError } from 'firebase/app';
 import { auth } from '@/firebase';
-import { apiFetch, ApiError } from '@/lib/apiClient';
+import { getFirebaseUserByEmail } from './firebaseUsers';
 
 export type AuthResponse = {
   success: boolean;
@@ -34,15 +34,6 @@ export function loadAuthUser(): AuthResponse | null {
 }
 
 function messageFromError(error: unknown): string {
-  if (error instanceof ApiError) {
-    if (typeof error.payload === 'string' && error.payload.trim()) return error.payload;
-    if (error.payload && typeof error.payload === 'object') {
-      const maybe = error.payload as { message?: unknown; error?: unknown };
-      if (typeof maybe.message === 'string' && maybe.message.trim()) return maybe.message;
-      if (typeof maybe.error === 'string' && maybe.error.trim()) return maybe.error;
-    }
-    return error.message;
-  }
   if (error && typeof error === 'object' && 'code' in error) {
     const fb = error as FirebaseError;
     switch (fb.code) {
@@ -65,26 +56,53 @@ function messageFromError(error: unknown): string {
 }
 
 /**
- * Firebase login (client) + Spring Boot cloud-profile login (server).
+ * Firebase login (client) + Firestore user info.
  *
  * Flow:
  * 1) Firebase sign-in with email/password
- * 2) Get Firebase ID token
- * 3) POST /api/auth/login with { idToken }
+ * 2) Get user info from Firestore collection 'users'
+ * 3) Check if user is blocked
  */
 export async function loginFirebase(email: string, password: string): Promise<AuthResponse> {
   try {
+    // 1. Authenticate with Firebase
     const cred = await signInWithEmailAndPassword(auth, email, password);
     const idToken = await cred.user.getIdToken();
 
-    const resp = await apiFetch<AuthResponse>('/auth/login', {
-      method: 'POST',
-      data: { idToken },
-    });
+    // 2. Get user metadata from Firestore
+    const userResult = await getFirebaseUserByEmail(email);
+    if (!userResult.success) {
+      await auth.signOut();
+      return { success: false, message: userResult.message };
+    }
+
+    const user = userResult.user;
+
+    // 3. Check if user is blocked
+    if (user.blocked) {
+      await auth.signOut();
+      return { success: false, message: 'Compte bloqué. Contactez un administrateur.' };
+    }
+
+    // 4. Build response
+    const resp: AuthResponse = {
+      success: true,
+      userId: user.localId,
+      username: user.username,
+      email: user.email,
+      typeName: user.role,
+      token: idToken,
+      blocked: user.blocked,
+    };
 
     saveAuthUser(resp);
     return resp;
   } catch (e) {
     return { success: false, message: messageFromError(e) };
   }
+}
+
+export function logout(): void {
+  localStorage.removeItem(STORAGE_KEY);
+  auth.signOut();
 }

@@ -156,6 +156,8 @@ public class FirebaseSignalementSyncService {
         
         if (sig.getValidation() != null) {
             data.put("validationStatusName", sig.getValidation().getStatus().getName());
+        } else {
+            data.put("validationStatusName", "PENDING");
         }
         
         if (sig.getSurfaceArea() != null) {
@@ -268,7 +270,7 @@ public class FirebaseSignalementSyncService {
             }
 
             signalementRepository.save(existing);
-            try { validationService.ensureForSignalement(existing); } catch (Exception ignored) { }
+            validationService.ensureForSignalement(existing);
             markDocSynced(doc.getReference(), existing.getId());
             return SyncDecision.UPDATED;
         }
@@ -291,7 +293,7 @@ public class FirebaseSignalementSyncService {
         if (photoUrl != null && !photoUrl.isBlank()) s.setPhotoUrl(photoUrl);
 
         Signalement saved = signalementRepository.save(s);
-        try { validationService.ensureForSignalement(saved); } catch (Exception ignored) { }
+        validationService.ensureForSignalement(saved);
 
         markDocSynced(doc.getReference(), saved.getId());
         return SyncDecision.CREATED;

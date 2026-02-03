@@ -62,3 +62,26 @@ export async function syncLocalToFirebase(): Promise<FirebaseSyncResult> {
     return { success: false, message: messageFromError(e) };
   }
 }
+
+export async function syncUsersToFirebase(): Promise<FirebaseSyncResult> {
+  const adminKey = import.meta.env.VITE_ADMIN_API_KEY as string | undefined;
+  if (!adminKey) {
+    return { success: false, message: 'VITE_ADMIN_API_KEY manquant (actions manager non configurées)' };
+  }
+
+  try {
+    const resp = await apiFetch<{ success: true; created: number; updated: number; skipped: number; errors: number }>(
+      '/admin/firebase/sync/users',
+      {
+        method: 'POST',
+        headers: {
+          'X-ADMIN-KEY': adminKey,
+        },
+      },
+    );
+
+    return resp;
+  } catch (e) {
+    return { success: false, message: messageFromError(e) };
+  }
+}

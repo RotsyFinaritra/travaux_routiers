@@ -2,45 +2,109 @@ import React from "react";
 import Sidebar from "../components/Sidebar";
 import StatsRecap from "../components/StatsRecap";
 import "../styles/dashboard.css";
-import { syncFirebaseSignalements, syncLocalToFirebase } from "../services/firebaseSyncApi";
+import { syncFirebaseSignalements, syncLocalToFirebase, syncUsersToFirebase } from "../services/firebaseSyncApi";
 
 const ManagerDashboard: React.FC = () => {
-  const [syncing, setSyncing] = React.useState(false);
-  const [syncMsg, setSyncMsg] = React.useState<string | null>(null);
-  const [reverseSyncing, setReverseSyncing] = React.useState(false);
-  const [reverseSyncMsg, setReverseSyncMsg] = React.useState<string | null>(null);
+  // const [syncing, setSyncing] = React.useState(false);
+  // const [syncMsg, setSyncMsg] = React.useState<string | null>(null);
+  // const [reverseSyncing, setReverseSyncing] = React.useState(false);
+  // const [reverseSyncMsg, setReverseSyncMsg] = React.useState<string | null>(null);
+  // const [userSyncing, setUserSyncing] = React.useState(false);
+  // const [userSyncMsg, setUserSyncMsg] = React.useState<string | null>(null);
 
-  async function onSyncClick() {
-    setSyncing(true);
-    setSyncMsg(null);
-    try {
-      const res = await syncFirebaseSignalements();
-      if (!res.success) {
-        setSyncMsg(res.message || "Synchronisation échouée");
-        return;
-      }
-      setSyncMsg(
-        `Sync OK: +${res.created} créés, ${res.updated} maj, ${res.skipped} inchangés, ${res.errors} erreurs`,
-      );
-    } finally {
-      setSyncing(false);
-    }
-  }
+  const [fullSyncing, setFullSyncing] = React.useState(false);
+  const [fullSyncMsg, setFullSyncMsg] = React.useState<string | null>(null);
 
-  async function onReverseSyncClick() {
-    setReverseSyncing(true);
-    setReverseSyncMsg(null);
+  // async function onSyncClick() {
+  //   setSyncing(true);
+  //   setSyncMsg(null);
+  //   try {
+  //     const res = await syncFirebaseSignalements();
+  //     if (!res.success) {
+  //       setSyncMsg(res.message || "Synchronisation échouée");
+  //       return;
+  //     }
+  //     setSyncMsg(
+  //       `Sync OK: +${res.created} créés, ${res.updated} maj, ${res.skipped} inchangés, ${res.errors} erreurs`,
+  //     );
+  //   } finally {
+  //     setSyncing(false);
+  //   }
+  // }
+
+  // async function onReverseSyncClick() {
+  //   setReverseSyncing(true);
+  //   setReverseSyncMsg(null);
+  //   try {
+  //     const res = await syncLocalToFirebase();
+  //     if (!res.success) {
+  //       setReverseSyncMsg(res.message || "Synchronisation échouée");
+  //       return;
+  //     }
+  //     setReverseSyncMsg(
+  //       `Sync Local→Firebase OK: +${res.created} créés, ${res.updated} maj, ${res.errors} erreurs`,
+  //     );
+  //   } finally {
+  //     setReverseSyncing(false);
+  //   }
+  // }
+
+  // async function onUserSyncClick() {
+  //   setUserSyncing(true);
+  //   setUserSyncMsg(null);
+  //   try {
+  //     const res = await syncUsersToFirebase();
+  //     if (!res.success) {
+  //       setUserSyncMsg(res.message || "Synchronisation utilisateurs échouée");
+  //       return;
+  //     }
+  //     setUserSyncMsg(
+  //       `Sync Utilisateurs OK: +${res.created} créés, ${res.updated} maj, ${res.errors} erreurs`,
+  //     );
+  //   } finally {
+  //     setUserSyncing(false);
+  //   }
+  // }
+
+  async function onFullSyncClick() {
+    setFullSyncing(true);
+    setFullSyncMsg(null);
+    
+    const messages: string[] = [];
+    
     try {
-      const res = await syncLocalToFirebase();
-      if (!res.success) {
-        setReverseSyncMsg(res.message || "Synchronisation échouée");
-        return;
+      // 1. Synchroniser Firebase → Local (signalements)
+      setFullSyncMsg("🔄 Synchronisation Firebase → Local...");
+      const res1 = await syncFirebaseSignalements();
+      if (res1.success) {
+        messages.push(`Firebase→Local: +${res1.created} créés, ${res1.updated} maj`);
+      } else {
+        messages.push(`Firebase→Local: ❌ ${res1.message}`);
       }
-      setReverseSyncMsg(
-        `Sync Local→Firebase OK: +${res.created} créés, ${res.updated} maj, ${res.errors} erreurs`,
-      );
+
+      // 2. Synchroniser Local → Firebase (signalements)
+      setFullSyncMsg("📤 Synchronisation Local → Firebase...");
+      const res2 = await syncLocalToFirebase();
+      if (res2.success) {
+        messages.push(`Local→Firebase: +${res2.created} créés, ${res2.updated} maj`);
+      } else {
+        messages.push(`Local→Firebase: ❌ ${res2.message}`);
+      }
+
+      // 3. Synchroniser Utilisateurs → Firebase
+      setFullSyncMsg("👥 Synchronisation Utilisateurs...");
+      const res3 = await syncUsersToFirebase();
+      if (res3.success) {
+        messages.push(`Utilisateurs: +${res3.created} créés, ${res3.updated} maj`);
+      } else {
+        messages.push(`Utilisateurs: ❌ ${res3.message}`);
+      }
+
+      setFullSyncMsg("✅ Synchronisation complète terminée ! " + messages.join(" | "));
+    } catch (e) {
+      setFullSyncMsg("❌ Erreur lors de la synchronisation complète");
     } finally {
-      setReverseSyncing(false);
+      setFullSyncing(false);
     }
   }
 
@@ -55,7 +119,12 @@ const ManagerDashboard: React.FC = () => {
             <span className="location">📍 Antananarivo, Madagascar</span>
 
             <div style={{ marginTop: 12, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-              <button className="btn-back" onClick={onSyncClick} disabled={syncing}>
+              <button className="btn-back" onClick={onFullSyncClick} disabled={fullSyncing}>
+                {fullSyncing ? "⏳ Synchronisation en cours..." : "🔄 Synchronisation Complète"}
+              </button>
+              {fullSyncMsg ? <span style={{ fontSize: 14 }}>{fullSyncMsg}</span> : null}
+
+              {/* <button className="btn-back" onClick={onSyncClick} disabled={syncing}>
                 {syncing ? "⏳ Synchronisation..." : "🔄 Synchroniser Firebase → Local"}
               </button>
               {syncMsg ? <span style={{ fontSize: 14 }}>{syncMsg}</span> : null}
@@ -64,6 +133,11 @@ const ManagerDashboard: React.FC = () => {
                 {reverseSyncing ? "⏳ Synchronisation..." : "📤 Synchroniser Local → Firebase"}
               </button>
               {reverseSyncMsg ? <span style={{ fontSize: 14 }}>{reverseSyncMsg}</span> : null}
+
+              <button className="btn-back" onClick={onUserSyncClick} disabled={userSyncing}>
+                {userSyncing ? "⏳ Synchronisation..." : "👥 Synchroniser Utilisateurs → Firebase"}
+              </button>
+              {userSyncMsg ? <span style={{ fontSize: 14 }}>{userSyncMsg}</span> : null} */}
             </div>
           </header>
           
