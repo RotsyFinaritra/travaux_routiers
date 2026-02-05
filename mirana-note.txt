@@ -3,3 +3,5 @@ tsa de note lotra no tanjona fa le milalao clavier
 Base de donnees au choix fa SGBR
 
 SPRINT Aotra
+
+maintenant , on va implementer la fonctionnalité d'upload fichier multiple dans le travaux-routiers-mobile , vous voyez la script.sql dans le dossier base , donc à vous de faire depuis le backend spring jusqu'au font-end travaux-routiers-mobile vuejs , maintenant , faire tous ça  
