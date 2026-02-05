@@ -82,7 +82,6 @@ CREATE TABLE IF NOT EXISTS signalement (
     date_signalement TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     surface_area DECIMAL(10, 2),
     budget DECIMAL(15, 2),
-    photo_url VARCHAR(255),
 
     CONSTRAINT fk_signalement_user
         FOREIGN KEY (user_id)
@@ -98,9 +97,25 @@ CREATE TABLE IF NOT EXISTS signalement (
 );
 
 -- ============================================
+-- TABLE DES PHOTOS DE SIGNALEMENTS
+-- ============================================
+CREATE TABLE IF NOT EXISTS signalement_photo (
+    id SERIAL PRIMARY KEY,
+    signalement_id INT NOT NULL,
+    photo_url VARCHAR(255) NOT NULL,
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_signalement_photo_signalement
+        FOREIGN KEY (signalement_id)
+        REFERENCES signalement(id)
+        ON DELETE CASCADE
+);
+
+-- ============================================
 -- HISTORIQUE DES STATUTS DE SIGNALEMENT
 -- ============================================
 CREATE TABLE IF NOT EXISTS signalement_status (
+
     id SERIAL PRIMARY KEY,
     signalement_id INT NOT NULL,
     status_id INT NOT NULL,
