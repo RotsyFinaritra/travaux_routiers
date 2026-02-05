@@ -221,7 +221,8 @@ const firebaseUid = computed(() => getCurrentFirebaseUser()?.uid ?? null);
 
 const visibleSignalements = computed(() => {
   const uid = firebaseUid.value;
-  if (!myOnly.value || !uid) return signalements.value;
+  if (!myOnly.value) return signalements.value;
+  if (!uid) return signalements.value;
   return signalements.value.filter((s) => s.userUid === uid);
 });
 

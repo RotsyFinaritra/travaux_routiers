@@ -110,7 +110,7 @@ export async function listFirebaseSignalements(): Promise<
     return {
       success: true,
       signalements: out.filter(
-        (s) => !!s.userUid && Number.isFinite(s.latitude) && Number.isFinite(s.longitude),
+        (s) => Number.isFinite(s.latitude) && Number.isFinite(s.longitude),
       ),
     };
   } catch (e) {
@@ -164,7 +164,7 @@ export function subscribeFirebaseSignalements(
       });
 
       onData(
-        out.filter((s) => !!s.userUid && Number.isFinite(s.latitude) && Number.isFinite(s.longitude)),
+        out.filter((s) => Number.isFinite(s.latitude) && Number.isFinite(s.longitude)),
       );
     },
     (err) => {

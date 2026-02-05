@@ -12,6 +12,7 @@ import com.example.travauxroutiers.model.Status;
 import com.example.travauxroutiers.repository.SignalementRepository;
 import com.example.travauxroutiers.repository.SignalementStatusRepository;
 import com.example.travauxroutiers.repository.StatusRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 public class SignalementService implements GenericService<Signalement, Long> {
@@ -19,6 +20,9 @@ public class SignalementService implements GenericService<Signalement, Long> {
     private final StatusRepository statusRepository;
     private final SignalementStatusRepository signalementStatusRepository;
     private final ValidationService validationService;
+    
+    @Autowired(required = false)
+    private PushNotificationService pushNotificationService;
 
     public SignalementService(SignalementRepository repo, StatusRepository statusRepository,
             SignalementStatusRepository signalementStatusRepository, ValidationService validationService) {
@@ -49,11 +53,7 @@ public class SignalementService implements GenericService<Signalement, Long> {
         }
 
         Signalement saved = repo.save(t);
-        try {
-            validationService.ensureForSignalement(saved);
-        } catch (Exception ex) {
-            // do not fail create on validation init error; log if needed
-        }
+        validationService.ensureForSignalement(saved);
 
         // Créer une entrée dans signalement_status pour le statut initial
         if (saved.getStatus() != null) {
@@ -97,6 +97,20 @@ public class SignalementService implements GenericService<Signalement, Long> {
                         t.getStatus(),
                         "Modification du signalement");
                 signalementStatusRepository.save(statusEntry);
+                
+                // Send push notification if service is available
+                if (pushNotificationService != null && oldStatus != null) {
+                    String userUid = updated.getUserUid();
+                    if (userUid != null && !userUid.isEmpty()) {
+                        pushNotificationService.sendSignalementStatusChangeNotification(
+                            userUid,
+                            updated.getId(),
+                            oldStatus.getName(),
+                            t.getStatus().getName(),
+                            updated.getDescription()
+                        );
+                    }
+                }
             }
 
             return updated;
@@ -110,7 +124,18 @@ public class SignalementService implements GenericService<Signalement, Long> {
     }
 
     public void delete(Long id) {
-        repo.deleteById(id);
+        repo.findById(id).ifPresent(signalement -> {
+            // 1. Supprimer l'historique de validation s'il existe
+            validationService.getBySignalement(id).ifPresent(validation -> {
+                validationService.deleteValidationWithHistory(validation.getId());
+            });
+            
+            // 2. Supprimer les entrées de signalement_status
+            signalementStatusRepository.deleteBySignalementId(id);
+            
+            // 3. Supprimer le signalement lui-même
+            repo.deleteById(id);
+        });
     }
 
     public Signalement updateStatus(Long id, Long statusId) {
@@ -128,6 +153,20 @@ public class SignalementService implements GenericService<Signalement, Long> {
                     newStatus,
                     "Changement de statut via bouton rapide");
             signalementStatusRepository.save(statusEntry);
+            
+            // Send push notification if service is available
+            if (pushNotificationService != null && oldStatus != null) {
+                String userUid = updated.getUserUid();
+                if (userUid != null && !userUid.isEmpty()) {
+                    pushNotificationService.sendSignalementStatusChangeNotification(
+                        userUid,
+                        updated.getId(),
+                        oldStatus.getName(),
+                        newStatus.getName(),
+                        updated.getDescription()
+                    );
+                }
+            }
 
             return updated;
         }).orElseThrow(() -> new RuntimeException("Signalement not found: " + id));

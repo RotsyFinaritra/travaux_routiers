@@ -156,6 +156,8 @@ public class FirebaseSignalementSyncService {
         
         if (sig.getValidation() != null) {
             data.put("validationStatusName", sig.getValidation().getStatus().getName());
+        } else {
+            data.put("validationStatusName", "PENDING");
         }
         
         if (sig.getSurfaceArea() != null) {
@@ -239,6 +241,12 @@ public class FirebaseSignalementSyncService {
                 existing.setUser(localUser);
                 changed = true;
             }
+            
+            // Update userUid field
+            if (!java.util.Objects.equals(existing.getUserUid(), userUid)) {
+                existing.setUserUid(userUid);
+                changed = true;
+            }
 
             // Optional fields: surfaceArea, budget, photoUrl
             Double surfaceArea = doc.getDouble("surfaceArea");
@@ -268,7 +276,7 @@ public class FirebaseSignalementSyncService {
             }
 
             signalementRepository.save(existing);
-            try { validationService.ensureForSignalement(existing); } catch (Exception ignored) { }
+            validationService.ensureForSignalement(existing);
             markDocSynced(doc.getReference(), existing.getId());
             return SyncDecision.UPDATED;
         }
@@ -276,6 +284,7 @@ public class FirebaseSignalementSyncService {
         Signalement s = new Signalement();
         s.setFirebaseDocId(doc.getId());
         s.setUser(localUser);
+        s.setUserUid(userUid);
         s.setStatus(status);
         s.setLatitude(BigDecimal.valueOf(lat));
         s.setLongitude(BigDecimal.valueOf(lng));
@@ -291,7 +300,7 @@ public class FirebaseSignalementSyncService {
         if (photoUrl != null && !photoUrl.isBlank()) s.setPhotoUrl(photoUrl);
 
         Signalement saved = signalementRepository.save(s);
-        try { validationService.ensureForSignalement(saved); } catch (Exception ignored) { }
+        validationService.ensureForSignalement(saved);
 
         markDocSynced(doc.getReference(), saved.getId());
         return SyncDecision.CREATED;
