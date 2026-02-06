@@ -10,7 +10,7 @@ import { onMounted } from 'vue';
 import { setupPushNotificationListeners } from '@/services/pushNotifications';
 
 onMounted(() => {
-  // Setup push notification listeners when app starts
+  // The platform check is now inside setupPushNotificationListeners
   setupPushNotificationListeners();
 });
 </script>
