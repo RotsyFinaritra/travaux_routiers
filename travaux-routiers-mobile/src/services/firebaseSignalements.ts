@@ -1,17 +1,17 @@
+import { db } from '@/firebase';
+import { getCurrentFirebaseUser } from '@/services/firebaseAuth';
 import type { FirebaseError } from 'firebase/app';
 import {
   addDoc,
   collection,
-  getDocs,
   getDoc,
+  getDocs,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore';
-import { db } from '@/firebase';
-import { getCurrentFirebaseUser } from '@/services/firebaseAuth';
 
 export type FirebaseSignalement = {
   id: string;
@@ -25,7 +25,7 @@ export type FirebaseSignalement = {
   userDisplayName?: string | null;
   surfaceArea?: number | null;
   budget?: number | null;
-  photoUrl?: string | null;
+  photos?: string[] | null;
   createdAt?: Date | null;
   syncedToLocalAt?: Date | null;
   localId?: number | null;
@@ -37,7 +37,7 @@ export type CreateFirebaseSignalementInput = {
   description: string;
   surfaceArea?: number | null;
   budget?: number | null;
-  photoUrl?: string | null;
+  photos?: string[] | null;
 };
 
 function messageFromFirestoreError(error: unknown): string {
@@ -100,7 +100,11 @@ export async function listFirebaseSignalements(): Promise<
               : null,
         budget:
           typeof data.budget === 'number' ? data.budget : data.budget != null ? Number(data.budget) : null,
-        photoUrl: typeof data.photoUrl === 'string' ? data.photoUrl : null,
+        photos: Array.isArray(data.photos)
+          ? (data.photos as string[]).filter((u) => typeof u === 'string' && u.trim() !== '')
+          : typeof data.photoUrl === 'string' && data.photoUrl.trim()
+            ? [data.photoUrl.trim()]
+            : null,
         createdAt: toDate(data.createdAt),
         syncedToLocalAt: toDate(data.syncedToLocalAt),
         localId: typeof data.localId === 'number' ? data.localId : null,
@@ -156,7 +160,11 @@ export function subscribeFirebaseSignalements(
                 : null,
           budget:
             typeof data.budget === 'number' ? data.budget : data.budget != null ? Number(data.budget) : null,
-          photoUrl: typeof data.photoUrl === 'string' ? data.photoUrl : null,
+          photos: Array.isArray(data.photos)
+            ? (data.photos as string[]).filter((u) => typeof u === 'string' && u.trim() !== '')
+            : typeof data.photoUrl === 'string' && data.photoUrl.trim()
+              ? [data.photoUrl.trim()]
+              : null,
           createdAt: toDate(data.createdAt),
           syncedToLocalAt: toDate(data.syncedToLocalAt),
           localId: typeof data.localId === 'number' ? data.localId : null,
@@ -211,7 +219,7 @@ export async function createFirebaseSignalement(
       validationStatusName: 'PENDING',
       surfaceArea: input.surfaceArea ?? null,
       budget: input.budget ?? null,
-      photoUrl: input.photoUrl ?? null,
+      photos: input.photos && input.photos.length > 0 ? input.photos : null,
       // IMPORTANT: a query with `orderBy('createdAt')` can exclude docs if `createdAt` is missing.
       // Use a non-null timestamp client-side so refresh/query is stable.
       createdAt: Timestamp.now(),

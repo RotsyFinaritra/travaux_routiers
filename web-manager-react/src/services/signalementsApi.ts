@@ -1,3 +1,11 @@
+import { ApiError, apiFetch } from "../lib/apiClient";
+
+export type SignalementPhotoDto = {
+  id?: number;
+  photoUrl: string;
+  uploadedAt?: string;
+};
+
 export type UpdateSignalementInput = {
   statusId: number;
   entrepriseId?: number | null;
@@ -6,7 +14,7 @@ export type UpdateSignalementInput = {
   description: string;
   surfaceArea?: number | null;
   budget?: number | null;
-  photoUrl?: string | null;
+  photos?: SignalementPhotoDto[] | null;
 };
 
 export async function updateSignalement(
@@ -24,7 +32,9 @@ export async function updateSignalement(
         description: input.description,
         surfaceArea: input.surfaceArea ?? null,
         budget: input.budget ?? null,
-        photoUrl: input.photoUrl ?? null,
+        photos: input.photos && input.photos.length > 0
+          ? input.photos.map(p => ({ photoUrl: p.photoUrl }))
+          : [],
       },
     });
     return { success: true, signalement };
@@ -32,7 +42,6 @@ export async function updateSignalement(
     return { success: false, message: messageFromError(error) };
   }
 }
-import { ApiError, apiFetch } from "../lib/apiClient";
 
 export type MinimalUserDto = {
   id: number;
@@ -79,7 +88,7 @@ export type SignalementDto = {
   dateSignalement?: string;
   surfaceArea?: number | null;
   budget?: number | null;
-  photoUrl?: string | null;
+  photos?: SignalementPhotoDto[] | null;
 };
 
 export type CreateSignalementInput = {
@@ -91,7 +100,7 @@ export type CreateSignalementInput = {
   description: string;
   surfaceArea?: number | null;
   budget?: number | null;
-  photoUrl?: string | null;
+  photos?: SignalementPhotoDto[] | null;
 };
 
 function messageFromError(error: unknown): string {
@@ -145,7 +154,9 @@ export async function createSignalement(
         description: input.description,
         surfaceArea: input.surfaceArea ?? null,
         budget: input.budget ?? null,
-        photoUrl: input.photoUrl ?? null,
+        photos: input.photos && input.photos.length > 0
+          ? input.photos.map(p => ({ photoUrl: p.photoUrl }))
+          : [],
       },
     });
     return { success: true, signalement };

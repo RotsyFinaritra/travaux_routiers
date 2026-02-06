@@ -1,6 +1,7 @@
 package com.example.travauxroutiers.service;
 
 import com.example.travauxroutiers.model.Signalement;
+import com.example.travauxroutiers.model.SignalementPhoto;
 import com.example.travauxroutiers.model.Status;
 import com.example.travauxroutiers.model.TypeUser;
 import com.example.travauxroutiers.model.User;
@@ -25,9 +26,12 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Profile("cloud")
@@ -166,8 +170,16 @@ public class FirebaseSignalementSyncService {
         if (sig.getBudget() != null) {
             data.put("budget", sig.getBudget().doubleValue());
         }
-        if (sig.getPhotoUrl() != null) {
-            data.put("photoUrl", sig.getPhotoUrl());
+        
+        // Envoyer les photos comme un tableau d'URLs
+        if (sig.getPhotos() != null && !sig.getPhotos().isEmpty()) {
+            List<String> photoUrls = sig.getPhotos().stream()
+                    .map(SignalementPhoto::getPhotoUrl)
+                    .filter(url -> url != null && !url.isBlank())
+                    .collect(Collectors.toList());
+            if (!photoUrls.isEmpty()) {
+                data.put("photos", photoUrls);
+            }
         }
         
         if (sig.getUser() != null) {
@@ -248,7 +260,7 @@ public class FirebaseSignalementSyncService {
                 changed = true;
             }
 
-            // Optional fields: surfaceArea, budget, photoUrl
+            // Optional fields: surfaceArea, budget, photos
             Double surfaceArea = doc.getDouble("surfaceArea");
             BigDecimal newSurfaceArea = surfaceArea != null ? BigDecimal.valueOf(surfaceArea) : null;
             if (!java.util.Objects.equals(existing.getSurfaceArea(), newSurfaceArea)) {
@@ -263,10 +275,27 @@ public class FirebaseSignalementSyncService {
                 changed = true;
             }
 
-            String photoUrl = doc.getString("photoUrl");
-            String newPhotoUrl = (photoUrl != null && !photoUrl.isBlank()) ? photoUrl : null;
-            if (!java.util.Objects.equals(existing.getPhotoUrl(), newPhotoUrl)) {
-                existing.setPhotoUrl(newPhotoUrl);
+            // Photos: gérer un tableau "photos" ou un ancien champ "photoUrl"
+            @SuppressWarnings("unchecked")
+            List<String> photosList = (List<String>) doc.get("photos");
+            String legacyPhotoUrl = doc.getString("photoUrl");
+            
+            List<String> newPhotoUrls = new ArrayList<>();
+            if (photosList != null && !photosList.isEmpty()) {
+                for (String url : photosList) {
+                    if (url != null && !url.isBlank()) {
+                        newPhotoUrls.add(url);
+                    }
+                }
+            } else if (legacyPhotoUrl != null && !legacyPhotoUrl.isBlank()) {
+                newPhotoUrls.add(legacyPhotoUrl);
+            }
+            
+            List<String> existingPhotoUrls = existing.getPhotos().stream()
+                    .map(SignalementPhoto::getPhotoUrl)
+                    .collect(Collectors.toList());
+            if (!existingPhotoUrls.equals(newPhotoUrls)) {
+                existing.replacePhotoUrls(newPhotoUrls);
                 changed = true;
             }
 
@@ -296,8 +325,20 @@ public class FirebaseSignalementSyncService {
         if (surfaceArea != null) s.setSurfaceArea(BigDecimal.valueOf(surfaceArea));
         Double budget = doc.getDouble("budget");
         if (budget != null) s.setBudget(BigDecimal.valueOf(budget));
-        String photoUrl = doc.getString("photoUrl");
-        if (photoUrl != null && !photoUrl.isBlank()) s.setPhotoUrl(photoUrl);
+        // Photos: gérer un tableau "photos" ou un ancien champ "photoUrl"
+        @SuppressWarnings("unchecked")
+        List<String> photosList = (List<String>) doc.get("photos");
+        String legacyPhotoUrl = doc.getString("photoUrl");
+        
+        if (photosList != null && !photosList.isEmpty()) {
+            for (String url : photosList) {
+                if (url != null && !url.isBlank()) {
+                    s.addPhoto(new SignalementPhoto(url));
+                }
+            }
+        } else if (legacyPhotoUrl != null && !legacyPhotoUrl.isBlank()) {
+            s.addPhoto(new SignalementPhoto(legacyPhotoUrl));
+        }
 
         Signalement saved = signalementRepository.save(s);
         validationService.ensureForSignalement(saved);

@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.example.travauxroutiers.model.Signalement;
@@ -12,7 +13,6 @@ import com.example.travauxroutiers.model.Status;
 import com.example.travauxroutiers.repository.SignalementRepository;
 import com.example.travauxroutiers.repository.SignalementStatusRepository;
 import com.example.travauxroutiers.repository.StatusRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 public class SignalementService implements GenericService<Signalement, Long> {
@@ -85,8 +85,13 @@ public class SignalementService implements GenericService<Signalement, Long> {
                 existing.setSurfaceArea(t.getSurfaceArea());
             if (t.getBudget() != null)
                 existing.setBudget(t.getBudget());
-            if (t.getPhotoUrl() != null)
-                existing.setPhotoUrl(t.getPhotoUrl());
+            if (t.getPhotos() != null && !t.getPhotos().isEmpty()) {
+                existing.getPhotos().clear();
+                for (com.example.travauxroutiers.model.SignalementPhoto photo : t.getPhotos()) {
+                    photo.setSignalement(existing);
+                    existing.getPhotos().add(photo);
+                }
+            }
 
             Signalement updated = repo.save(existing);
 

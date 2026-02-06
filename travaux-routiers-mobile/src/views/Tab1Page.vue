@@ -110,7 +110,7 @@
             </ion-item>
 
             <ion-item lines="none">
-              <ion-label position="stacked">Photo (optionnel)</ion-label>
+              <ion-label position="stacked">Photos (optionnel)</ion-label>
             </ion-item>
             
             <div class="photo-actions ion-padding">
@@ -122,13 +122,15 @@
                 <ion-icon slot="start" :icon="imagesOutline" />
                 Galerie
               </ion-button>
-              <ion-button v-if="draft.photoUrl" size="small" fill="clear" color="danger" @click="removePhoto">
-                <ion-icon slot="icon-only" :icon="trashOutline" />
-              </ion-button>
             </div>
             
-            <div v-if="draft.photoUrl" class="photo-preview ion-padding">
-              <img :src="draft.photoUrl" alt="Aperçu" />
+            <div v-if="draft.photos.length > 0" class="photos-preview ion-padding">
+              <div v-for="(photo, index) in draft.photos" :key="index" class="photo-item">
+                <img :src="photo" alt="Aperçu" />
+                <ion-button size="small" fill="clear" color="danger" @click="removePhoto(index)">
+                  <ion-icon slot="icon-only" :icon="trashOutline" />
+                </ion-button>
+              </div>
             </div>
 
             <ion-button expand="block" class="ion-margin-top" @click="trySubmit">
@@ -150,44 +152,44 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
-import { cameraOutline, imagesOutline, trashOutline } from 'ionicons/icons';
+import { Geolocation } from '@capacitor/geolocation';
 import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
   IonButton,
-  IonToggle,
-  IonItem,
-  IonLabel,
   IonCard,
+  IonCardContent,
   IonCardHeader,
   IonCardTitle,
-  IonCardContent,
-  IonIcon,
-  IonGrid,
-  IonRow,
   IonCol,
-  IonSpinner,
-  IonToast,
-  IonNote,
-  IonTextarea,
+  IonContent,
+  IonGrid,
+  IonHeader,
+  IonIcon,
   IonInput,
+  IonItem,
+  IonLabel,
+  IonNote,
+  IonPage,
+  IonRow,
+  IonSpinner,
+  IonTextarea,
+  IonTitle,
+  IonToast,
+  IonToggle,
+  IonToolbar,
 } from '@ionic/vue';
-import { Geolocation } from '@capacitor/geolocation';
+import { cameraOutline, imagesOutline, trashOutline } from 'ionicons/icons';
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 
 import { L } from '@/lib/leaflet';
-import { useRouter } from 'vue-router';
-import { waitForAuthReady, getCurrentFirebaseUser } from '@/services/firebaseAuth';
+import { getCurrentFirebaseUser, waitForAuthReady } from '@/services/firebaseAuth';
 import {
   createFirebaseSignalement,
   listFirebaseSignalements,
   subscribeFirebaseSignalements,
   type FirebaseSignalement,
 } from '@/services/firebaseSignalements';
+import { useRouter } from 'vue-router';
 
 const router = useRouter();
 
@@ -214,7 +216,7 @@ const draft = reactive({
   description: '',
   surfaceAreaText: '',
   budgetText: '',
-  photoUrl: '',
+  photos: [] as string[],
 });
 
 const firebaseUid = computed(() => getCurrentFirebaseUser()?.uid ?? null);
@@ -335,13 +337,20 @@ function renderMarkers(items: FirebaseSignalement[]) {
 
     const surface = typeof s.surfaceArea === 'number' && Number.isFinite(s.surfaceArea) ? s.surfaceArea : null;
     const budget = typeof s.budget === 'number' && Number.isFinite(s.budget) ? s.budget : null;
-    const photo = typeof s.photoUrl === 'string' && s.photoUrl.trim() ? s.photoUrl.trim() : null;
+    const photos = Array.isArray(s.photos) && s.photos.length > 0 ? s.photos : null;
+
+    let photosHtml = '';
+    if (photos) {
+      photosHtml = photos.map((p, i) =>
+        `<br/><a href="${escapeHtml(p)}" target="_blank" rel="noopener">Photo ${i + 1}</a>`
+      ).join('');
+    }
 
     m.bindPopup(
       `<strong>${status}</strong><br/>Validation: ${validation}<br/>${user}` +
         `${surface != null ? `<br/>Surface: ${escapeHtml(String(surface))} m²` : ''}` +
         `${budget != null ? `<br/>Budget: ${escapeHtml(String(budget))} DA` : ''}` +
-        `${photo ? `<br/><a href="${escapeHtml(photo)}" target="_blank" rel="noopener">Photo</a>` : ''}` +
+        `${photosHtml}` +
         `<br/><em>${escapeHtml(s.description)}</em>`,
     );
 
@@ -372,7 +381,7 @@ function clearDraft() {
   draft.description = '';
   draft.surfaceAreaText = '';
   draft.budgetText = '';
-  draft.photoUrl = '';
+  draft.photos = [];
   if (draftMarker && map) {
     map.removeLayer(draftMarker);
   }
@@ -431,7 +440,7 @@ async function submit() {
   try {
     const surfaceArea = parseOptionalNumber(draft.surfaceAreaText);
     const budget = parseOptionalNumber(draft.budgetText);
-    const photoUrl = draft.photoUrl.trim().length > 0 ? draft.photoUrl.trim() : null;
+    const photos = draft.photos.length > 0 ? [...draft.photos] : null;
 
     console.log('[UI] Submitting signalement to Firestore...', { lat: draft.lat, lng: draft.lng, description: draft.description.trim() });
 
@@ -441,7 +450,7 @@ async function submit() {
       description: draft.description.trim(),
       surfaceArea,
       budget,
-      photoUrl,
+      photos,
     });
     if (!res.success) return showError(res.message || 'Création impossible');
 
@@ -477,7 +486,7 @@ async function takePhoto() {
     });
     
     if (image.dataUrl) {
-      draft.photoUrl = image.dataUrl;
+      draft.photos.push(image.dataUrl);
     }
   } catch (error) {
     console.warn('Camera canceled or error:', error);
@@ -494,15 +503,15 @@ async function choosePhoto() {
     });
     
     if (image.dataUrl) {
-      draft.photoUrl = image.dataUrl;
+      draft.photos.push(image.dataUrl);
     }
   } catch (error) {
     console.warn('Photo picker canceled or error:', error);
   }
 }
 
-function removePhoto() {
-  draft.photoUrl = '';
+function removePhoto(index: number) {
+  draft.photos.splice(index, 1);
 }
 
 function escapeHtml(value: string): string {
@@ -575,16 +584,29 @@ watch(
   align-items: center;
 }
 
-.photo-preview {
+.photos-preview {
   display: flex;
-  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
   padding: 12px 0;
 }
 
-.photo-preview img {
-  max-width: 100%;
-  max-height: 300px;
+.photo-item {
+  position: relative;
+  display: inline-block;
+}
+
+.photo-item img {
+  max-width: 150px;
+  max-height: 150px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  object-fit: cover;
+}
+
+.photo-item ion-button {
+  position: absolute;
+  top: -8px;
+  right: -8px;
 }
 </style>

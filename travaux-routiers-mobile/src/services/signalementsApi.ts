@@ -1,4 +1,4 @@
-import { apiFetch, ApiError } from '@/lib/apiClient';
+import { ApiError, apiFetch } from '@/lib/apiClient';
 
 export type MinimalUserDto = {
   id: number;
@@ -45,7 +45,7 @@ export type SignalementDto = {
   dateSignalement?: string;
   surfaceArea?: number | null;
   budget?: number | null;
-  photoUrl?: string | null;
+  photos?: { id: number; photoUrl: string; uploadedAt?: string }[] | null;
 };
 
 export type CreateSignalementInput = {
@@ -57,7 +57,7 @@ export type CreateSignalementInput = {
   description: string;
   surfaceArea?: number | null;
   budget?: number | null;
-  photoUrl?: string | null;
+  photos?: string[] | null;
 };
 
 function messageFromError(error: unknown): string {
@@ -99,7 +99,9 @@ export async function createSignalement(
         description: input.description,
         surfaceArea: input.surfaceArea ?? null,
         budget: input.budget ?? null,
-        photoUrl: input.photoUrl ?? null,
+        photos: input.photos && input.photos.length > 0
+          ? input.photos.map(url => ({ photoUrl: url }))
+          : [],
       },
     });
     return { success: true, signalement };

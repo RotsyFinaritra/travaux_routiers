@@ -2,15 +2,21 @@ package com.example.travauxroutiers.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 
 @Entity
@@ -49,8 +55,9 @@ public class Signalement {
     @Column(precision = 15, scale = 2)
     private BigDecimal budget;
 
-    @Column(name = "photo_url", columnDefinition = "TEXT")
-    private String photoUrl;
+    @OneToMany(mappedBy = "signalement", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JsonManagedReference
+    private List<SignalementPhoto> photos = new ArrayList<>();
 
     @Column(name = "firebase_doc_id", unique = true, length = 64)
     private String firebaseDocId;
@@ -142,12 +149,42 @@ public class Signalement {
         this.budget = budget;
     }
 
-    public String getPhotoUrl() {
-        return photoUrl;
+    public List<SignalementPhoto> getPhotos() {
+        return photos;
     }
 
-    public void setPhotoUrl(String photoUrl) {
-        this.photoUrl = photoUrl;
+    public void setPhotos(List<SignalementPhoto> photos) {
+        this.photos = photos;
+    }
+
+    /**
+     * Ajoute une photo au signalement et établit la relation bidirectionnelle.
+     */
+    public void addPhoto(SignalementPhoto photo) {
+        photos.add(photo);
+        photo.setSignalement(this);
+    }
+
+    /**
+     * Supprime une photo du signalement.
+     */
+    public void removePhoto(SignalementPhoto photo) {
+        photos.remove(photo);
+        photo.setSignalement(null);
+    }
+
+    /**
+     * Remplace toutes les photos par une nouvelle liste d'URLs.
+     */
+    public void replacePhotoUrls(List<String> urls) {
+        this.photos.clear();
+        if (urls != null) {
+            for (String url : urls) {
+                if (url != null && !url.isBlank()) {
+                    addPhoto(new SignalementPhoto(url));
+                }
+            }
+        }
     }
 
     public String getFirebaseDocId() {
