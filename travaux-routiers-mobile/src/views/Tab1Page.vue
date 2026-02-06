@@ -110,7 +110,7 @@
             </ion-item>
 
             <ion-item lines="none">
-              <ion-label position="stacked">Photo (optionnel)</ion-label>
+              <ion-label position="stacked">Photos (optionnel)</ion-label>
             </ion-item>
             
             <div class="photo-actions ion-padding">
@@ -122,13 +122,15 @@
                 <ion-icon slot="start" :icon="imagesOutline" />
                 Galerie
               </ion-button>
-              <ion-button v-if="draft.photoUrl" size="small" fill="clear" color="danger" @click="removePhoto">
-                <ion-icon slot="icon-only" :icon="trashOutline" />
-              </ion-button>
             </div>
             
-            <div v-if="draft.photoUrl" class="photo-preview ion-padding">
-              <img :src="draft.photoUrl" alt="Aperçu" />
+            <div v-if="draft.photoUrls.length > 0" class="photo-previews ion-padding">
+              <div v-for="(url, index) in draft.photoUrls" :key="index" class="photo-preview">
+                <img :src="url" alt="Aperçu" />
+                <ion-button size="small" fill="clear" color="danger" @click="removePhoto(index)">
+                  <ion-icon slot="icon-only" :icon="trashOutline" />
+                </ion-button>
+              </div>
             </div>
 
             <ion-button expand="block" class="ion-margin-top" @click="trySubmit">
@@ -187,6 +189,7 @@ import {
   listFirebaseSignalements,
   subscribeFirebaseSignalements,
   type FirebaseSignalement,
+  uploadPhotoToStorage, // Nouvelle fonction ajoutée
 } from '@/services/firebaseSignalements';
 
 const router = useRouter();
@@ -214,7 +217,7 @@ const draft = reactive({
   description: '',
   surfaceAreaText: '',
   budgetText: '',
-  photoUrl: '',
+  photoUrls: [] as string[], // Changement : tableau pour multiples photos (data URLs temporaires)
 });
 
 const firebaseUid = computed(() => getCurrentFirebaseUser()?.uid ?? null);
@@ -335,13 +338,20 @@ function renderMarkers(items: FirebaseSignalement[]) {
 
     const surface = typeof s.surfaceArea === 'number' && Number.isFinite(s.surfaceArea) ? s.surfaceArea : null;
     const budget = typeof s.budget === 'number' && Number.isFinite(s.budget) ? s.budget : null;
-    const photo = typeof s.photoUrl === 'string' && s.photoUrl.trim() ? s.photoUrl.trim() : null;
+
+    // Changement : Gestion des multiples photos
+    let photosHtml = '';
+    if (s.photoUrls && s.photoUrls.length > 0) {
+      photosHtml = s.photoUrls.map((url, idx) => `<br/><a href="${escapeHtml(url)}" target="_blank" rel="noopener">Photo ${idx + 1}</a>`).join('');
+    } else if (s.photoUrl) {
+      photosHtml = `<br/><a href="${escapeHtml(s.photoUrl)}" target="_blank" rel="noopener">Photo</a>`;
+    }
 
     m.bindPopup(
       `<strong>${status}</strong><br/>Validation: ${validation}<br/>${user}` +
         `${surface != null ? `<br/>Surface: ${escapeHtml(String(surface))} m²` : ''}` +
         `${budget != null ? `<br/>Budget: ${escapeHtml(String(budget))} DA` : ''}` +
-        `${photo ? `<br/><a href="${escapeHtml(photo)}" target="_blank" rel="noopener">Photo</a>` : ''}` +
+        photosHtml +
         `<br/><em>${escapeHtml(s.description)}</em>`,
     );
 
@@ -372,7 +382,7 @@ function clearDraft() {
   draft.description = '';
   draft.surfaceAreaText = '';
   draft.budgetText = '';
-  draft.photoUrl = '';
+  draft.photoUrls = [];
   if (draftMarker && map) {
     map.removeLayer(draftMarker);
   }
@@ -431,9 +441,14 @@ async function submit() {
   try {
     const surfaceArea = parseOptionalNumber(draft.surfaceAreaText);
     const budget = parseOptionalNumber(draft.budgetText);
-    const photoUrl = draft.photoUrl.trim().length > 0 ? draft.photoUrl.trim() : null;
 
-    console.log('[UI] Submitting signalement to Firestore...', { lat: draft.lat, lng: draft.lng, description: draft.description.trim() });
+    // Changement : Upload des photos vers Firebase Storage
+    let uploadedUrls: string[] = [];
+    if (draft.photoUrls.length > 0) {
+      uploadedUrls = await Promise.all(draft.photoUrls.map(uploadPhotoToStorage));
+    }
+
+    console.log('[UI] Submitting signalement to Firestore...', { lat: draft.lat, lng: draft.lng, description: draft.description.trim(), photoUrls: uploadedUrls });
 
     const res = await createFirebaseSignalement({
       latitude: draft.lat,
@@ -441,14 +456,13 @@ async function submit() {
       description: draft.description.trim(),
       surfaceArea,
       budget,
-      photoUrl,
+      photoUrls: uploadedUrls.length > 0 ? uploadedUrls : null,
     });
     if (!res.success) return showError(res.message || 'Création impossible');
 
     console.log('[UI] Signalement created successfully', { id: res.id });
     showSuccess(`Signalement créé ! (ID: ${res.id.substring(0, 8)}...)`);
 
-    // Keep refresh for consistency; realtime subscription should also update the list.
     await refresh();
     creating.value = false;
     clearDraft();
@@ -477,7 +491,7 @@ async function takePhoto() {
     });
     
     if (image.dataUrl) {
-      draft.photoUrl = image.dataUrl;
+      draft.photoUrls.push(image.dataUrl);
     }
   } catch (error) {
     console.warn('Camera canceled or error:', error);
@@ -494,15 +508,15 @@ async function choosePhoto() {
     });
     
     if (image.dataUrl) {
-      draft.photoUrl = image.dataUrl;
+      draft.photoUrls.push(image.dataUrl);
     }
   } catch (error) {
     console.warn('Photo picker canceled or error:', error);
   }
 }
 
-function removePhoto() {
-  draft.photoUrl = '';
+function removePhoto(index: number) {
+  draft.photoUrls.splice(index, 1);
 }
 
 function escapeHtml(value: string): string {
@@ -518,7 +532,7 @@ onMounted(async () => {
   const user = await waitForAuthReady();
   if (!user) return void (await router.replace('/login'));
 
-  // Realtime updates (shows new docs immediately, and surfaces permission errors).
+  // Realtime updates
   unsubscribeSignalements = subscribeFirebaseSignalements(
     (items) => {
       signalements.value = items;
@@ -575,16 +589,32 @@ watch(
   align-items: center;
 }
 
-.photo-preview {
+.photo-previews {
   display: flex;
-  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
   padding: 12px 0;
 }
 
+.photo-preview {
+  position: relative;
+  width: 100px;
+  height: 100px;
+}
+
 .photo-preview img {
-  max-width: 100%;
-  max-height: 300px;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.photo-preview ion-button {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  --padding-start: 4px;
+  --padding-end: 4px;
 }
 </style>

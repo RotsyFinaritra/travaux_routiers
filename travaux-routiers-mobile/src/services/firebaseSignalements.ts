@@ -10,6 +10,7 @@ import {
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore';
+import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage'; // Ajout pour Storage
 import { db } from '@/firebase';
 import { getCurrentFirebaseUser } from '@/services/firebaseAuth';
 
@@ -25,7 +26,8 @@ export type FirebaseSignalement = {
   userDisplayName?: string | null;
   surfaceArea?: number | null;
   budget?: number | null;
-  photoUrl?: string | null;
+  photoUrl?: string | null; // Ancien champ pour compatibilité
+  photoUrls?: string[] | null; // Nouveau champ pour multiples photos
   createdAt?: Date | null;
   syncedToLocalAt?: Date | null;
   localId?: number | null;
@@ -37,7 +39,7 @@ export type CreateFirebaseSignalementInput = {
   description: string;
   surfaceArea?: number | null;
   budget?: number | null;
-  photoUrl?: string | null;
+  photoUrls?: string[] | null; // Changement : tableau d'URLs
 };
 
 function messageFromFirestoreError(error: unknown): string {
@@ -66,6 +68,20 @@ function toDate(value: unknown): Date | null {
   return null;
 }
 
+// Nouvelle fonction : Upload une photo (data URL) vers Firebase Storage et retourne l'URL de téléchargement
+export async function uploadPhotoToStorage(dataUrl: string): Promise<string> {
+  try {
+    const storage = getStorage();
+    const fileName = `signalements/photos/${Date.now()}_${Math.random().toString(36).substring(2)}.jpg`;
+    const fileRef = ref(storage, fileName);
+    await uploadString(fileRef, dataUrl, 'data_url');
+    return await getDownloadURL(fileRef);
+  } catch (error) {
+    console.error('[storage] Upload photo failed', error);
+    throw new Error('Erreur lors de l\'upload de la photo');
+  }
+}
+
 export async function listFirebaseSignalements(): Promise<
   { success: true; signalements: FirebaseSignalement[] } | { success: false; message: string }
 > {
@@ -80,6 +96,14 @@ export async function listFirebaseSignalements(): Promise<
       const latitude = typeof data.latitude === 'number' ? data.latitude : Number(data.latitude);
       const longitude = typeof data.longitude === 'number' ? data.longitude : Number(data.longitude);
       const description = typeof data.description === 'string' ? data.description : '';
+
+      // Changement : Gestion de photoUrls et compatibilité avec photoUrl
+      let photoUrls: string[] | null = null;
+      if (Array.isArray(data.photoUrls)) {
+        photoUrls = data.photoUrls as string[];
+      } else if (typeof data.photoUrl === 'string' && data.photoUrl.trim()) {
+        photoUrls = [data.photoUrl];
+      }
 
       out.push({
         id: doc.id,
@@ -100,7 +124,8 @@ export async function listFirebaseSignalements(): Promise<
               : null,
         budget:
           typeof data.budget === 'number' ? data.budget : data.budget != null ? Number(data.budget) : null,
-        photoUrl: typeof data.photoUrl === 'string' ? data.photoUrl : null,
+        photoUrl: typeof data.photoUrl === 'string' ? data.photoUrl : null, // Ancien
+        photoUrls, // Nouveau
         createdAt: toDate(data.createdAt),
         syncedToLocalAt: toDate(data.syncedToLocalAt),
         localId: typeof data.localId === 'number' ? data.localId : null,
@@ -137,6 +162,14 @@ export function subscribeFirebaseSignalements(
           typeof data.longitude === 'number' ? data.longitude : Number(data.longitude);
         const description = typeof data.description === 'string' ? data.description : '';
 
+        // Changement : Gestion de photoUrls et compatibilité avec photoUrl
+        let photoUrls: string[] | null = null;
+        if (Array.isArray(data.photoUrls)) {
+          photoUrls = data.photoUrls as string[];
+        } else if (typeof data.photoUrl === 'string' && data.photoUrl.trim()) {
+          photoUrls = [data.photoUrl];
+        }
+
         out.push({
           id: doc.id,
           latitude,
@@ -156,7 +189,8 @@ export function subscribeFirebaseSignalements(
                 : null,
           budget:
             typeof data.budget === 'number' ? data.budget : data.budget != null ? Number(data.budget) : null,
-          photoUrl: typeof data.photoUrl === 'string' ? data.photoUrl : null,
+          photoUrl: typeof data.photoUrl === 'string' ? data.photoUrl : null, // Ancien
+          photoUrls, // Nouveau
           createdAt: toDate(data.createdAt),
           syncedToLocalAt: toDate(data.syncedToLocalAt),
           localId: typeof data.localId === 'number' ? data.localId : null,
@@ -211,9 +245,7 @@ export async function createFirebaseSignalement(
       validationStatusName: 'PENDING',
       surfaceArea: input.surfaceArea ?? null,
       budget: input.budget ?? null,
-      photoUrl: input.photoUrl ?? null,
-      // IMPORTANT: a query with `orderBy('createdAt')` can exclude docs if `createdAt` is missing.
-      // Use a non-null timestamp client-side so refresh/query is stable.
+      photoUrls: input.photoUrls ?? null, // Changement : tableau d'URLs
       createdAt: Timestamp.now(),
       createdAtServer: serverTimestamp(),
       syncedToLocalAt: null,
@@ -223,9 +255,7 @@ export async function createFirebaseSignalement(
     console.log('[firestore] write completed, waiting 3s...');
     setTimeout(() => console.log('[firestore] check console now'), 3000);
 
-
-
-    // Confirm the document exists locally / server-side (helps surface permission issues).
+    // Confirm the document exists locally / server-side
     try {
       const written = await getDoc(docRef);
       if (!written.exists()) {

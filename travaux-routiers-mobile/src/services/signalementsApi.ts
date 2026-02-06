@@ -45,7 +45,7 @@ export type SignalementDto = {
   dateSignalement?: string;
   surfaceArea?: number | null;
   budget?: number | null;
-  photoUrl?: string | null;
+  photoUrls?: string[] | null; // Changement : tableau pour multiples photos
 };
 
 export type CreateSignalementInput = {
@@ -57,7 +57,7 @@ export type CreateSignalementInput = {
   description: string;
   surfaceArea?: number | null;
   budget?: number | null;
-  photoUrl?: string | null;
+  photoUrls?: string[] | null; // Changement : tableau
 };
 
 function messageFromError(error: unknown): string {
@@ -99,7 +99,7 @@ export async function createSignalement(
         description: input.description,
         surfaceArea: input.surfaceArea ?? null,
         budget: input.budget ?? null,
-        photoUrl: input.photoUrl ?? null,
+        photoUrls: input.photoUrls ?? null, // Changement : tableau
       },
     });
     return { success: true, signalement };
