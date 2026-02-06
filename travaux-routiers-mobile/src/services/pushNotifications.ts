@@ -36,7 +36,11 @@ export async function setupPushNotificationListeners() {
   // Notification received while app is in foreground
   await PushNotifications.addListener('pushNotificationReceived', (notification) => {
     console.log('[push] Notification received:', notification);
-    // You can show a custom alert or toast here
+    
+    // Show alert when app is open
+    if (notification.title && notification.body) {
+      alert(`${notification.title}\n\n${notification.body}`);
+    }
   });
 
   // Notification action performed (user tapped on it)

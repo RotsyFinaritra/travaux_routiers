@@ -2,6 +2,7 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import type { FirebaseError } from 'firebase/app';
 import { auth } from '@/firebase';
 import { getFirebaseUserByEmail } from './firebaseUsers';
+import { registerPushNotifications, removePushToken, setupPushNotificationListeners } from './pushNotifications';
 
 export type AuthResponse = {
   success: boolean;
@@ -77,6 +78,8 @@ export async function loginFirebase(email: string, password: string): Promise<Au
     }
 
     const user = userResult.user;
+    await setupPushNotificationListeners();
+    await registerPushNotifications();
 
     // 3. Check if user is blocked
     if (user.blocked) {
@@ -102,7 +105,8 @@ export async function loginFirebase(email: string, password: string): Promise<Au
   }
 }
 
-export function logout(): void {
+export async function logout(): Promise<void> {
+  await removePushToken(); // Optionnel : retirer le token de notification du backend
   localStorage.removeItem(STORAGE_KEY);
-  auth.signOut();
+  await auth.signOut();
 }

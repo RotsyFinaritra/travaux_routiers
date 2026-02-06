@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "655630630609",
-    "project_id": "s5-travaux-routiers",
-    "storage_bucket": "s5-travaux-routiers.firebasestorage.app"
+    "project_number": "362080047336",
+    "project_id": "travaux-routiers-project",
+    "storage_bucket": "travaux-routiers-project.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:655630630609:android:f0a4ad24cc64bd07020ff0",
+        "mobilesdk_app_id": "1:362080047336:android:4bac5a67fb76539f29795d",
         "android_client_info": {
           "package_name": "io.ionic.starter"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBQuOb66XpwPBHUPczfPbXV3oZHiRsQwBI"
+          "current_key": "AIzaSyBj1dNvKo068PhzMd_NpkpAO3AgK0XnHNM"
         }
       ],
       "services": {
