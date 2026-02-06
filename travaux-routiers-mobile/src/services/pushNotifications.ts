@@ -1,9 +1,20 @@
 import { PushNotifications, type Token } from '@capacitor/push-notifications';
+import { Capacitor } from '@capacitor/core';
 import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { getCurrentFirebaseUser } from './firebaseAuth';
 
+// Helper to check if we're on a real native mobile platform
+function isNativeMobile(): boolean {
+  return Capacitor.isNativePlatform();
+}
+
 export async function registerPushNotifications() {
+  if (!isNativeMobile()) {
+    console.log('[push] Skipping registration - not on native platform');
+    return;
+  }
+  
   const user = getCurrentFirebaseUser();
   if (!user) {
     console.warn('[push] No authenticated user, skipping registration');
@@ -33,6 +44,11 @@ export async function registerPushNotifications() {
 }
 
 export async function setupPushNotificationListeners() {
+  if (!isNativeMobile()) {
+    console.log('[push] Skipping listeners setup - not on native platform');
+    return;
+  }
+  
   // Notification received while app is in foreground
   await PushNotifications.addListener('pushNotificationReceived', (notification) => {
     console.log('[push] Notification received:', notification);
