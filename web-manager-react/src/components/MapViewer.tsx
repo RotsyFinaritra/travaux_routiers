@@ -1,9 +1,100 @@
 import { divIcon } from "leaflet";
 import "leaflet/dist/leaflet.css";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import ReactDOM from "react-dom";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import { listSignalements, type SignalementDto } from "../services/signalementsApi";
 import "../styles/cartePage.css";
+
+/* ── Photo gallery sub-component ── */
+interface PhotoGalleryProps {
+  photos: { photoUrl: string }[];
+}
+
+const VISIBLE_COUNT = 3;
+
+const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos }) => {
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  const openLightbox = useCallback((idx: number) => setLightboxIndex(idx), []);
+  const closeLightbox = useCallback(() => setLightboxIndex(null), []);
+  const goPrev = useCallback(
+    () => setLightboxIndex((i) => (i !== null ? (i - 1 + photos.length) % photos.length : 0)),
+    [photos.length],
+  );
+  const goNext = useCallback(
+    () => setLightboxIndex((i) => (i !== null ? (i + 1) % photos.length : 0)),
+    [photos.length],
+  );
+
+  // keyboard navigation
+  useEffect(() => {
+    if (lightboxIndex === null) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeLightbox();
+      if (e.key === "ArrowLeft") goPrev();
+      if (e.key === "ArrowRight") goNext();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [lightboxIndex, closeLightbox, goPrev, goNext]);
+
+  const visible = photos.slice(0, VISIBLE_COUNT);
+  const remaining = photos.length - VISIBLE_COUNT;
+
+  return (
+    <>
+      <div className="popup-photos-section">
+        <div className="popup-photos-gallery">
+          <div className="popup-photos-track">
+            {visible.map((photo, idx) => (
+              <img
+                key={idx}
+                src={photo.photoUrl}
+                alt={`Photo ${idx + 1}`}
+                className="popup-photo"
+                onClick={() => openLightbox(idx)}
+              />
+            ))}
+          </div>
+          {remaining > 0 && (
+            <button
+              className="popup-photos-more-btn"
+              title={`Voir ${remaining} photo(s) supplémentaire(s)`}
+              onClick={() => openLightbox(VISIBLE_COUNT)}
+            >
+              ›
+            </button>
+          )}
+        </div>
+        <div className="popup-photos-count">
+          {photos.length} photo{photos.length > 1 ? "s" : ""}
+        </div>
+      </div>
+
+      {/* Lightbox – rendered via portal at body level */}
+      {lightboxIndex !== null &&
+        ReactDOM.createPortal(
+          <div className="photo-lightbox-overlay" onClick={closeLightbox}>
+            <div className="photo-lightbox" onClick={(e) => e.stopPropagation()}>
+              <button className="lightbox-close" onClick={closeLightbox}>
+                ×
+              </button>
+              <img src={photos[lightboxIndex].photoUrl} alt={`Photo ${lightboxIndex + 1}`} />
+              <div className="lightbox-nav">
+                <button onClick={goPrev}>‹</button>
+                <span className="lightbox-counter">
+                  {lightboxIndex + 1} / {photos.length}
+                </span>
+                <button onClick={goNext}>›</button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+    </>
+  );
+};
 
 function normalizeStatusName(value: string | undefined | null): string {
   return (value ?? "")
@@ -135,11 +226,7 @@ const MapViewer: React.FC = () => {
                         <span className="popup-value">{s.description}</span>
                       </div>
                       {Array.isArray(s.photos) && s.photos.length > 0 && (
-                        <div className="popup-photos">
-                          {s.photos.map((photo, idx) => (
-                            <img key={idx} src={photo.photoUrl} alt={`Photo ${idx + 1}`} className="popup-photo" />
-                          ))}
-                        </div>
+                        <PhotoGallery photos={s.photos} />
                       )}
                     </div>
                   </div>
