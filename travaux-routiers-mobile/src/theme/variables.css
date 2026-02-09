@@ -1,2 +1,157 @@
 /* For information on how to create your own theme, please refer to:
 http://ionicframework.com/docs/theming/ */
+
+/* ====== TRAVAUX ROUTIERS – PROFESSIONAL THEME ====== */
+
+:root {
+  /* Primary – Deep Blue for authority/trust */
+  --ion-color-primary: #1e3a5f;
+  --ion-color-primary-rgb: 30, 58, 95;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #1a3354;
+  --ion-color-primary-tint: #354d6f;
+
+  /* Secondary – Amber/Orange for road works visibility */
+  --ion-color-secondary: #f59e0b;
+  --ion-color-secondary-rgb: 245, 158, 11;
+  --ion-color-secondary-contrast: #000000;
+  --ion-color-secondary-contrast-rgb: 0, 0, 0;
+  --ion-color-secondary-shade: #d88a0a;
+  --ion-color-secondary-tint: #f6a823;
+
+  /* Tertiary – Teal for accents */
+  --ion-color-tertiary: #0d9488;
+  --ion-color-tertiary-rgb: 13, 148, 136;
+  --ion-color-tertiary-contrast: #ffffff;
+  --ion-color-tertiary-contrast-rgb: 255, 255, 255;
+  --ion-color-tertiary-shade: #0b8278;
+  --ion-color-tertiary-tint: #259f94;
+
+  /* Success */
+  --ion-color-success: #16a34a;
+  --ion-color-success-rgb: 22, 163, 74;
+  --ion-color-success-contrast: #ffffff;
+  --ion-color-success-contrast-rgb: 255, 255, 255;
+  --ion-color-success-shade: #138f41;
+  --ion-color-success-tint: #2dac5c;
+
+  /* Warning */
+  --ion-color-warning: #eab308;
+  --ion-color-warning-rgb: 234, 179, 8;
+  --ion-color-warning-contrast: #000000;
+  --ion-color-warning-contrast-rgb: 0, 0, 0;
+  --ion-color-warning-shade: #ce9e07;
+  --ion-color-warning-tint: #ecbb21;
+
+  /* Danger */
+  --ion-color-danger: #dc2626;
+  --ion-color-danger-rgb: 220, 38, 38;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255, 255, 255;
+  --ion-color-danger-shade: #c22121;
+  --ion-color-danger-tint: #e03c3c;
+
+  /* Medium */
+  --ion-color-medium: #64748b;
+  --ion-color-medium-rgb: 100, 116, 139;
+  --ion-color-medium-contrast: #ffffff;
+  --ion-color-medium-contrast-rgb: 255, 255, 255;
+  --ion-color-medium-shade: #58667a;
+  --ion-color-medium-tint: #748297;
+
+  /* Light */
+  --ion-color-light: #f1f5f9;
+  --ion-color-light-rgb: 241, 245, 249;
+  --ion-color-light-contrast: #1e293b;
+  --ion-color-light-contrast-rgb: 30, 41, 59;
+  --ion-color-light-shade: #d4d8db;
+  --ion-color-light-tint: #f2f6fa;
+
+  /* Global / typography */
+  --ion-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --ion-background-color: #f8fafc;
+  --ion-background-color-rgb: 248, 250, 252;
+  --ion-text-color: #1e293b;
+  --ion-text-color-rgb: 30, 41, 59;
+
+  /* Toolbar */
+  --ion-toolbar-background: #1e3a5f;
+  --ion-toolbar-color: #ffffff;
+
+  /* Card styling */
+  --ion-card-background: #ffffff;
+
+  /* Tab bar */
+  --ion-tab-bar-background: #ffffff;
+  --ion-tab-bar-color: #94a3b8;
+  --ion-tab-bar-color-selected: #1e3a5f;
+}
+
+/* ====== GLOBAL ENHANCEMENTS ====== */
+
+ion-card {
+  border-radius: 16px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.04) !important;
+  margin: 8px 0 !important;
+}
+
+ion-button {
+  --border-radius: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  text-transform: none;
+}
+
+ion-toolbar {
+  --padding-start: 16px;
+  --padding-end: 16px;
+}
+
+ion-title {
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.3px;
+}
+
+ion-item {
+  --border-radius: 12px;
+  --padding-start: 16px;
+  --inner-padding-end: 16px;
+}
+
+ion-input, ion-textarea {
+  --border-radius: 8px;
+}
+
+ion-tab-bar {
+  --border: none;
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
+  padding: 4px 0 8px;
+  height: 60px;
+}
+
+ion-tab-button {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+ion-tab-button ion-icon {
+  font-size: 22px;
+}
+
+/* Smooth page transitions */
+ion-content {
+  --background: #f8fafc;
+}
+
+ion-header ion-toolbar:first-of-type {
+  padding-top: var(--ion-safe-area-top, 0);
+}
+
+/* Toast improvements */
+ion-toast {
+  --border-radius: 12px;
+  font-weight: 500;
+}
