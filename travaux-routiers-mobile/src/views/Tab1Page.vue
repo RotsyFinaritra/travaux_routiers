@@ -342,17 +342,24 @@ function renderMarkers(items: FirebaseSignalement[]) {
 
     let photosHtml = '';
     if (photos) {
-      photosHtml = photos.map((p, i) =>
-        `<br/><a href="${escapeHtml(p)}" target="_blank" rel="noopener">Photo ${i + 1}</a>`
-      ).join('');
+      photosHtml = '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">' +
+        photos.map((p) =>
+          `<a href="${escapeHtml(p)}" target="_blank" rel="noopener">` +
+          `<img src="${escapeHtml(p)}" style="width:80px;height:80px;object-fit:cover;border-radius:4px;border:1px solid #ccc;" />` +
+          `</a>`
+        ).join('') +
+        '</div>';
     }
 
     m.bindPopup(
-      `<strong>${status}</strong><br/>Validation: ${validation}<br/>${user}` +
+      `<div style="max-width:260px;">` +
+        `<strong>${status}</strong><br/>Validation: ${validation}<br/>${user}` +
         `${surface != null ? `<br/>Surface: ${escapeHtml(String(surface))} m²` : ''}` +
         `${budget != null ? `<br/>Budget: ${escapeHtml(String(budget))} DA` : ''}` +
+        `<br/><em>${escapeHtml(s.description)}</em>` +
         `${photosHtml}` +
-        `<br/><em>${escapeHtml(s.description)}</em>`,
+      `</div>`,
+      { maxWidth: 280 },
     );
 
     // Popup on hover (desktop); click still works.
