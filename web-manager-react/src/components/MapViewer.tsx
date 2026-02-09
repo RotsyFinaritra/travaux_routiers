@@ -134,8 +134,12 @@ const MapViewer: React.FC = () => {
                         <span className="popup-label">📝 Description:</span>
                         <span className="popup-value">{s.description}</span>
                       </div>
-                      {typeof s.photoUrl === "string" && s.photoUrl.trim() !== "" && (
-                        <img src={s.photoUrl} alt="Photo du signalement" className="popup-photo" />
+                      {Array.isArray(s.photos) && s.photos.length > 0 && (
+                        <div className="popup-photos">
+                          {s.photos.map((photo, idx) => (
+                            <img key={idx} src={photo.photoUrl} alt={`Photo ${idx + 1}`} className="popup-photo" />
+                          ))}
+                        </div>
                       )}
                     </div>
                   </div>

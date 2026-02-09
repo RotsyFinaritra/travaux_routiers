@@ -33,7 +33,7 @@ const EditSignalement: React.FC = () => {
             description: signalement.description,
             surfaceArea: signalement.surfaceArea ?? undefined,
             budget: signalement.budget ?? undefined,
-            photoUrl: signalement.photoUrl ?? undefined,
+            photos: signalement.photos ?? undefined,
           });
         } else {
           setError("Signalement introuvable.");
@@ -64,7 +64,7 @@ const EditSignalement: React.FC = () => {
         description: values.description,
         surfaceArea: values.surfaceArea,
         budget: values.budget ?? null,
-        photoUrl: values.photoUrl ?? null,
+        photos: values.photos ?? null,
       });
       setSubmitting(false);
       if (!resp.success) {
