@@ -181,6 +181,7 @@ import {
 import { cameraOutline, imagesOutline, trashOutline } from 'ionicons/icons';
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 
+import { compressImage, estimateBase64Size, formatSize } from '@/lib/imageCompressor';
 import { L } from '@/lib/leaflet';
 import { getCurrentFirebaseUser, waitForAuthReady } from '@/services/firebaseAuth';
 import {
@@ -479,14 +480,17 @@ function trySubmit() {
 async function takePhoto() {
   try {
     const image = await Camera.getPhoto({
-      quality: 80,
+      quality: 70,
       allowEditing: false,
       resultType: CameraResultType.DataUrl,
       source: CameraSource.Camera,
     });
     
     if (image.dataUrl) {
-      draft.photos.push(image.dataUrl);
+      const compressed = await compressImage(image.dataUrl, { maxSize: 800, quality: 0.5 });
+      draft.photos.push(compressed);
+      const size = estimateBase64Size(compressed);
+      console.info(`[photo] compressed: ${formatSize(size)}`);
     }
   } catch (error) {
     console.warn('Camera canceled or error:', error);
@@ -496,14 +500,17 @@ async function takePhoto() {
 async function choosePhoto() {
   try {
     const image = await Camera.getPhoto({
-      quality: 80,
+      quality: 70,
       allowEditing: false,
       resultType: CameraResultType.DataUrl,
       source: CameraSource.Photos,
     });
     
     if (image.dataUrl) {
-      draft.photos.push(image.dataUrl);
+      const compressed = await compressImage(image.dataUrl, { maxSize: 800, quality: 0.5 });
+      draft.photos.push(compressed);
+      const size = estimateBase64Size(compressed);
+      console.info(`[photo] compressed: ${formatSize(size)}`);
     }
   } catch (error) {
     console.warn('Photo picker canceled or error:', error);
