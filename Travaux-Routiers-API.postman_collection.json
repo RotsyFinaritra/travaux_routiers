@@ -8,12 +8,12 @@
 	"variable": [
 		{
 			"key": "base_url",
-			"value": "http://localhost:8080",
+			"value": "http://localhost:8081",
 			"type": "string"
 		},
 		{
 			"key": "admin_key",
-			"value": "your-admin-key",
+			"value": "KmFN8wzpxkL9fp4m+i/4sEgttJedflhLykAcAxo44T0=",
 			"type": "string"
 		},
 		{
@@ -229,7 +229,7 @@
 							},
 							{
 								"key": "X-ADMIN-KEY",
-								"value": "{{admin_key}}"
+								"value": "{{KmFN8wzpxkL9fp4m+i/4sEgttJedflhLykAcAxo44T0=}}"
 							}
 						],
 						"body": {
