@@ -20,16 +20,29 @@ public class SignalementService implements GenericService<Signalement, Long> {
     private final StatusRepository statusRepository;
     private final SignalementStatusRepository signalementStatusRepository;
     private final ValidationService validationService;
+    private final PrixM2Service prixM2Service;
     
     @Autowired(required = false)
     private PushNotificationService pushNotificationService;
 
     public SignalementService(SignalementRepository repo, StatusRepository statusRepository,
-            SignalementStatusRepository signalementStatusRepository, ValidationService validationService) {
+            SignalementStatusRepository signalementStatusRepository, ValidationService validationService,
+            PrixM2Service prixM2Service) {
         this.repo = repo;
         this.statusRepository = statusRepository;
         this.signalementStatusRepository = signalementStatusRepository;
         this.validationService = validationService;
+        this.prixM2Service = prixM2Service;
+    }
+
+    /**
+     * Recalcule le budget: prix_m2 * niveau * surface_area.
+     * Appelé automatiquement à la création et modification.
+     */
+    private void recalculerBudget(Signalement s) {
+        if (s.getSurfaceArea() != null && s.getNiveau() != null) {
+            s.setBudget(prixM2Service.calculerBudget(s.getSurfaceArea(), s.getNiveau()));
+        }
     }
 
     public List<Signalement> listAll() {
@@ -51,6 +64,9 @@ public class SignalementService implements GenericService<Signalement, Long> {
         if (t.getCreatedAt() == null) {
             t.setCreatedAt(LocalDateTime.now());
         }
+
+        // Calcul automatique du budget
+        recalculerBudget(t);
 
         Signalement saved = repo.save(t);
         validationService.ensureForSignalement(saved);
@@ -83,8 +99,12 @@ public class SignalementService implements GenericService<Signalement, Long> {
                 existing.setEntreprise(t.getEntreprise());
             if (t.getSurfaceArea() != null)
                 existing.setSurfaceArea(t.getSurfaceArea());
-            if (t.getBudget() != null)
-                existing.setBudget(t.getBudget());
+            if (t.getNiveau() != null)
+                existing.setNiveau(t.getNiveau());
+
+            // Recalcul auto du budget si surface ou niveau changent
+            recalculerBudget(existing);
+
             if (t.getPhotos() != null && !t.getPhotos().isEmpty()) {
                 existing.getPhotos().clear();
                 for (com.example.travauxroutiers.model.SignalementPhoto photo : t.getPhotos()) {
