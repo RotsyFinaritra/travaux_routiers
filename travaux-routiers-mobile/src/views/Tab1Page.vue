@@ -192,6 +192,20 @@
       />
     </ion-content>
   </ion-page>
+
+  <ion-modal :is-open="showPhotoModal">
+    <ion-header>
+      <ion-toolbar>
+        <ion-buttons slot="end">
+          <ion-button @click="showPhotoModal = false">Close</ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="ion-padding" style="display:flex;justify-content:center;align-items:center;">
+      <img :src="selectedPhoto" style="max-width:100%; max-height:100vh; border-radius:8px;" />
+    </ion-content>
+  </ion-modal>
+
 </template>
 
 <script setup lang="ts">
@@ -238,7 +252,7 @@ import {
   sendOutline,
   timeOutline,
 } from 'ionicons/icons';
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 
 import { compressImage, estimateBase64Size, formatSize } from '@/lib/imageCompressor';
 import { L } from '@/lib/leaflet';
@@ -265,7 +279,8 @@ const creating = ref(false);
 const toastOpen = ref(false);
 const toastMessage = ref('');
 const toastColor = ref<'danger' | 'success'>('danger');
-
+const showPhotoModal = ref(false);
+const selectedPhoto = ref('');
 const signalements = ref<FirebaseSignalement[]>([]);
 
 let unsubscribeSignalements: null | (() => void) = null;
@@ -403,39 +418,92 @@ function renderMarkers(items: FirebaseSignalement[]) {
     const validationColor = validation === 'APPROVED' ? '#16a34a' : validation === 'REJECTED' ? '#ef4444' : '#f59e0b';
     let photosHtml = '';
     if (photos) {
-      photosHtml = '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;">' +
-        photos.map((p) =>
-          `<a href="${escapeHtml(p)}" target="_blank" rel="noopener">` +
-          `<img src="${escapeHtml(p)}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:2px solid #e2e8f0;" />` +
-          `</a>`
-        ).join('') +
+      photosHtml =
+        '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">' +
+        photos
+          .map(
+            (url, index) => `
+              <img
+                src="${url}"
+                onclick="window.dispatchEvent(new CustomEvent('open-photo', { detail: '${url}' }))"
+                style="
+                  width:72px;
+                  height:72px;
+                  object-fit:cover;
+                  border-radius:8px;
+                  border:2px solid #e2e8f0;
+                  cursor:zoom-in;
+                "
+              />
+            `
+          )
+          .join('') +
         '</div>';
     }
 
-    m.bindPopup(
+
+    const popupHtml =
       `<div style="max-width:260px;font-family:Inter,sans-serif;">` +
+
         `<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">` +
           `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${validationColor};"></span>` +
           `<strong style="font-size:14px;">${escapeHtml(status)}</strong>` +
         `</div>` +
+
         `<div style="font-size:12px;color:#64748b;margin-bottom:4px;">` +
           `<span style="background:${validationColor}20;color:${validationColor};padding:2px 8px;border-radius:10px;font-weight:600;font-size:11px;">${validation}</span>` +
           ` &middot; ${escapeHtml(user)}` +
         `</div>` +
-        `${surface != null ? `<div style="font-size:12px;color:#475569;">Surface: ${escapeHtml(String(surface))} m2</div>` : ''}` +
-        `${budget != null ? `<div style="font-size:12px;color:#475569;">Budget: ${escapeHtml(String(budget))} DA</div>` : ''}` +
-        `<p style="margin:6px 0 0;font-size:13px;color:#334155;line-height:1.4;">${escapeHtml(s.description)}</p>` +
-        `${photosHtml}` +
-      `</div>`,
-      { maxWidth: 280 },
-    );
 
-    // Popup on hover (desktop); click still works.
-    m.on('mouseover', () => m.openPopup());
-    m.on('mouseout', () => m.closePopup());
+        `${surface != null
+          ? `<div style="font-size:12px;color:#475569;">Surface: ${escapeHtml(String(surface))} m²</div>`
+          : ''}` +
+
+        `${budget != null
+          ? `<div style="font-size:12px;color:#475569;">Budget: ${escapeHtml(String(budget))} DA</div>`
+          : ''}` +
+
+        `<p style="margin:6px 0 0;font-size:13px;color:#334155;line-height:1.4;">` +
+          `${escapeHtml(s.description)}` +
+        `</p>` +
+
+        `${photosHtml}` +
+
+      `</div>`;
+
+
+
+       // --- Bind popup (IMPORTANT OPTIONS) ---
+      m.bindPopup(popupHtml, {
+        maxWidth: 300,
+        closeOnClick: false, // permet cliquer dans le popup
+        autoClose: true
+      });
+
+      // --- Ouvrir uniquement au clic ---
+      m.on('click', () => {
+        m.openPopup();
+      });
+
+    // // Popup on hover (desktop); click still works.
+    // m.on('mouseover', () => m.openPopup());
+    // m.on('mouseout', () => m.closePopup());
 
     m.addTo(markersLayer);
   }
+}
+
+onMounted(() => {
+  window.addEventListener('open-photo', handleOpenPhoto);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('open-photo', handleOpenPhoto);
+});
+
+function handleOpenPhoto(e: CustomEvent) {
+  selectedPhoto.value = e.detail; // URL de l'image
+  showPhotoModal.value = true;
 }
 
 function setDraftLocation(lat: number, lng: number) {
