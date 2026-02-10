@@ -1,140 +1,182 @@
 <template>
   <ion-page>
-    <ion-header>
+    <ion-header class="ion-no-border">
       <ion-toolbar>
-        <ion-title>Carte</ion-title>
+        <ion-icon :icon="constructOutline" slot="start" class="toolbar-icon" />
+        <ion-title>Travaux Routiers</ion-title>
+        <ion-button slot="end" fill="clear" @click="refresh" :disabled="loading" class="refresh-btn">
+          <ion-spinner v-if="loading" name="crescent" />
+          <ion-icon v-else :icon="refreshOutline" />
+        </ion-button>
       </ion-toolbar>
     </ion-header>
     <ion-content :fullscreen="true">
-      <div class="ion-padding">
-        <ion-grid>
-          <ion-row>
-            <ion-col size="12" size-md="4">
-              <ion-card>
-                <ion-card-header>
-                  <ion-card-title>Total</ion-card-title>
-                </ion-card-header>
-                <ion-card-content>
-                  <div class="metric">{{ recap.total }}</div>
-                </ion-card-content>
-              </ion-card>
-            </ion-col>
+      <div class="page-content">
+        <!-- Statistics cards -->
+        <div class="stats-row">
+          <div class="stat-card stat-total">
+            <div class="stat-icon-wrap">
+              <ion-icon :icon="layersOutline" />
+            </div>
+            <div class="stat-info">
+              <span class="stat-value">{{ recap.total }}</span>
+              <span class="stat-label">Total</span>
+            </div>
+          </div>
 
-            <ion-col size="12" size-md="4">
-              <ion-card>
-                <ion-card-header>
-                  <ion-card-title>En attente</ion-card-title>
-                </ion-card-header>
-                <ion-card-content>
-                  <div class="metric">{{ recap.pending }}</div>
-                </ion-card-content>
-              </ion-card>
-            </ion-col>
+          <div class="stat-card stat-pending">
+            <div class="stat-icon-wrap">
+              <ion-icon :icon="timeOutline" />
+            </div>
+            <div class="stat-info">
+              <span class="stat-value">{{ recap.pending }}</span>
+              <span class="stat-label">En attente</span>
+            </div>
+          </div>
 
-            <ion-col size="12" size-md="4">
-              <ion-card>
-                <ion-card-header>
-                  <ion-card-title>Validés</ion-card-title>
-                </ion-card-header>
-                <ion-card-content>
-                  <div class="metric">{{ recap.approved }}</div>
-                </ion-card-content>
-              </ion-card>
-            </ion-col>
-          </ion-row>
-        </ion-grid>
-
-        <ion-item lines="full">
-          <ion-label>Mes signalements uniquement</ion-label>
-          <ion-toggle v-model="myOnly" />
-        </ion-item>
-
-        <div class="actions ion-margin-top">
-          <ion-button :disabled="loading" @click="refresh">
-            <ion-spinner v-if="loading" slot="start" name="dots" />
-            Actualiser
-          </ion-button>
-          <ion-button fill="outline" @click="centerOnMyPosition">Ma position</ion-button>
-          <ion-button color="primary" fill="solid" @click="toggleCreate">
-            {{ creating ? 'Annuler' : 'Nouveau signalement' }}
-          </ion-button>
+          <div class="stat-card stat-approved">
+            <div class="stat-icon-wrap">
+              <ion-icon :icon="checkmarkCircleOutline" />
+            </div>
+            <div class="stat-info">
+              <span class="stat-value">{{ recap.approved }}</span>
+              <span class="stat-label">Valides</span>
+            </div>
+          </div>
         </div>
 
-        <ion-note v-if="creating" color="medium">
-          Touchez la carte pour choisir l'emplacement (ou utilisez “Ma position”).
-        </ion-note>
+        <!-- Filter toggle -->
+        <div class="filter-bar">
+          <div class="filter-label">
+            <ion-icon :icon="filterOutline" />
+            <span>Mes signalements uniquement</span>
+          </div>
+          <ion-toggle v-model="myOnly" mode="ios" />
+        </div>
 
-        <div ref="mapEl" class="map"></div>
+        <!-- Map container -->
+        <div class="map-container">
+          <div ref="mapEl" class="map"></div>
+          <!-- Floating action buttons on map -->
+          <div class="map-fab-group">
+            <button class="map-fab" @click="centerOnMyPosition" title="Ma position">
+              <ion-icon :icon="locateOutline" />
+            </button>
+            <button class="map-fab fab-create" :class="{ active: creating }" @click="toggleCreate" title="Nouveau signalement">
+              <ion-icon :icon="creating ? closeOutline : addOutline" />
+            </button>
+          </div>
+        </div>
 
-        <ion-card v-if="creating" class="ion-margin-top">
+        <!-- Instruction banner -->
+        <div v-if="creating" class="instruction-banner">
+          <ion-icon :icon="informationCircleOutline" />
+          <span>Touchez la carte pour choisir l'emplacement du signalement</span>
+        </div>
+
+        <!-- Create signalement form -->
+        <ion-card v-if="creating" class="create-card">
           <ion-card-header>
-            <ion-card-title>Créer un signalement</ion-card-title>
+            <div class="card-header-row">
+              <ion-icon :icon="createOutline" class="card-header-icon" />
+              <ion-card-title>Nouveau signalement</ion-card-title>
+            </div>
           </ion-card-header>
           <ion-card-content>
-            <ion-item>
-              <ion-label position="stacked">Position</ion-label>
-              <ion-input
-                :value="draft.lat != null && draft.lng != null ? `${draft.lat.toFixed(6)}, ${draft.lng.toFixed(6)}` : ''"
-                placeholder="Choisissez un point sur la carte"
-                readonly
-              />
-            </ion-item>
-
-            <ion-item>
-              <ion-label position="stacked">Description</ion-label>
-              <ion-textarea
-                v-model="draft.description"
-                placeholder="Ex: nid-de-poule, chaussée abîmée..."
-                :auto-grow="true"
-              />
-            </ion-item>
-
-            <ion-item>
-              <ion-label position="stacked">Surface estimée (m²) (optionnel)</ion-label>
-              <ion-input
-                v-model="draft.surfaceAreaText"
-                type="number"
-                inputmode="decimal"
-                placeholder="Ex: 2.5"
-              />
-            </ion-item>
-
-            <ion-item>
-              <ion-label position="stacked">Budget estimé (DA) (optionnel)</ion-label>
-              <ion-input
-                v-model="draft.budgetText"
-                type="number"
-                inputmode="decimal"
-                placeholder="Ex: 15000"
-              />
-            </ion-item>
-
-            <ion-item lines="none">
-              <ion-label position="stacked">Photos (optionnel)</ion-label>
-            </ion-item>
-            
-            <div class="photo-actions ion-padding">
-              <ion-button size="small" @click="takePhoto">
-                <ion-icon slot="start" :icon="cameraOutline" />
-                Prendre photo
-              </ion-button>
-              <ion-button size="small" fill="outline" @click="choosePhoto">
-                <ion-icon slot="start" :icon="imagesOutline" />
-                Galerie
-              </ion-button>
-            </div>
-            
-            <div v-if="draft.photos.length > 0" class="photos-preview ion-padding">
-              <div v-for="(photo, index) in draft.photos" :key="index" class="photo-item">
-                <img :src="photo" alt="Aperçu" />
-                <ion-button size="small" fill="clear" color="danger" @click="removePhoto(index)">
-                  <ion-icon slot="icon-only" :icon="trashOutline" />
-                </ion-button>
+            <!-- Position -->
+            <div class="form-field">
+              <label class="field-label">
+                <ion-icon :icon="locationOutline" />
+                Position
+              </label>
+              <div class="position-display">
+                <span v-if="draft.lat != null && draft.lng != null">
+                  {{ draft.lat.toFixed(6) }}, {{ draft.lng.toFixed(6) }}
+                </span>
+                <span v-else class="placeholder-text">Touchez la carte...</span>
               </div>
             </div>
 
-            <ion-button expand="block" class="ion-margin-top" @click="trySubmit">
-              Envoyer
+            <!-- Description -->
+            <div class="form-field">
+              <label class="field-label">
+                <ion-icon :icon="documentTextOutline" />
+                Description
+              </label>
+              <ion-item lines="none" class="form-input">
+                <ion-textarea
+                  v-model="draft.description"
+                  placeholder="Ex: nid-de-poule, chaussee abimee..."
+                  :auto-grow="true"
+                  :rows="2"
+                />
+              </ion-item>
+            </div>
+
+            <!-- Surface & Budget in row -->
+            <div class="form-row">
+              <div class="form-field flex-1">
+                <label class="field-label">
+                  <ion-icon :icon="resizeOutline" />
+                  Surface (m2)
+                </label>
+                <ion-item lines="none" class="form-input">
+                  <ion-input
+                    v-model="draft.surfaceAreaText"
+                    type="number"
+                    inputmode="decimal"
+                    placeholder="Ex: 2.5"
+                  />
+                </ion-item>
+              </div>
+
+              <div class="form-field flex-1">
+                <label class="field-label">
+                  <ion-icon :icon="cashOutline" />
+                  Budget (DA)
+                </label>
+                <ion-item lines="none" class="form-input">
+                  <ion-input
+                    v-model="draft.budgetText"
+                    type="number"
+                    inputmode="decimal"
+                    placeholder="Ex: 15000"
+                  />
+                </ion-item>
+              </div>
+            </div>
+
+            <!-- Photos -->
+            <div class="form-field">
+              <label class="field-label">
+                <ion-icon :icon="imagesOutline" />
+                Photos
+              </label>
+              <div class="photo-actions">
+                <button class="photo-btn" @click="takePhoto">
+                  <ion-icon :icon="cameraOutline" />
+                  <span>Camera</span>
+                </button>
+                <button class="photo-btn photo-btn-outline" @click="choosePhoto">
+                  <ion-icon :icon="imageOutline" />
+                  <span>Galerie</span>
+                </button>
+              </div>
+
+              <div v-if="draft.photos.length > 0" class="photos-preview">
+                <div v-for="(photo, index) in draft.photos" :key="index" class="photo-item">
+                  <img :src="photo" alt="Apercu" />
+                  <button class="photo-remove" @click="removePhoto(index)">
+                    <ion-icon :icon="closeCircle" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Submit -->
+            <ion-button expand="block" class="submit-btn" @click="trySubmit" size="large">
+              <ion-icon slot="start" :icon="sendOutline" />
+              Envoyer le signalement
             </ion-button>
           </ion-card-content>
         </ion-card>
@@ -145,6 +187,7 @@
         :message="toastMessage"
         duration="2500"
         :color="toastColor"
+        position="top"
         @didDismiss="toastOpen = false"
       />
     </ion-content>
@@ -160,17 +203,12 @@ import {
   IonCardContent,
   IonCardHeader,
   IonCardTitle,
-  IonCol,
   IonContent,
-  IonGrid,
   IonHeader,
   IonIcon,
   IonInput,
   IonItem,
-  IonLabel,
-  IonNote,
   IonPage,
-  IonRow,
   IonSpinner,
   IonTextarea,
   IonTitle,
@@ -178,7 +216,28 @@ import {
   IonToggle,
   IonToolbar,
 } from '@ionic/vue';
-import { cameraOutline, imagesOutline, trashOutline } from 'ionicons/icons';
+import {
+  addOutline,
+  cameraOutline,
+  cashOutline,
+  checkmarkCircleOutline,
+  closeCircle,
+  closeOutline,
+  constructOutline,
+  createOutline,
+  documentTextOutline,
+  filterOutline,
+  imageOutline,
+  imagesOutline,
+  informationCircleOutline,
+  layersOutline,
+  locateOutline,
+  locationOutline,
+  refreshOutline,
+  resizeOutline,
+  sendOutline,
+  timeOutline,
+} from 'ionicons/icons';
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 
 import { compressImage, estimateBase64Size, formatSize } from '@/lib/imageCompressor';
@@ -312,7 +371,7 @@ function destroyMap() {
 function colorForSignalement(s: FirebaseSignalement): string {
   const v = validationNameOf(s);
   if (v === 'REJECTED') return '#ef4444';
-  if (v === 'APPROVED') return '#22c55e';
+  if (v === 'APPROVED') return '#16a34a';
   return '#f59e0b';
 }
 
@@ -330,7 +389,7 @@ function renderMarkers(items: FirebaseSignalement[]) {
       weight: 2,
     });
 
-    const status = s.statusName ?? '—';
+    const status = s.statusName ?? '--';
     const validation = validationNameOf(s);
     const user = s.userDisplayName
       ? `@${s.userDisplayName}`
@@ -340,19 +399,35 @@ function renderMarkers(items: FirebaseSignalement[]) {
     const budget = typeof s.budget === 'number' && Number.isFinite(s.budget) ? s.budget : null;
     const photos = Array.isArray(s.photos) && s.photos.length > 0 ? s.photos : null;
 
+    // Build styled popup
+    const validationColor = validation === 'APPROVED' ? '#16a34a' : validation === 'REJECTED' ? '#ef4444' : '#f59e0b';
     let photosHtml = '';
     if (photos) {
-      photosHtml = photos.map((p, i) =>
-        `<br/><a href="${escapeHtml(p)}" target="_blank" rel="noopener">Photo ${i + 1}</a>`
-      ).join('');
+      photosHtml = '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;">' +
+        photos.map((p) =>
+          `<a href="${escapeHtml(p)}" target="_blank" rel="noopener">` +
+          `<img src="${escapeHtml(p)}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:2px solid #e2e8f0;" />` +
+          `</a>`
+        ).join('') +
+        '</div>';
     }
 
     m.bindPopup(
-      `<strong>${status}</strong><br/>Validation: ${validation}<br/>${user}` +
-        `${surface != null ? `<br/>Surface: ${escapeHtml(String(surface))} m²` : ''}` +
-        `${budget != null ? `<br/>Budget: ${escapeHtml(String(budget))} DA` : ''}` +
+      `<div style="max-width:260px;font-family:Inter,sans-serif;">` +
+        `<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">` +
+          `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${validationColor};"></span>` +
+          `<strong style="font-size:14px;">${escapeHtml(status)}</strong>` +
+        `</div>` +
+        `<div style="font-size:12px;color:#64748b;margin-bottom:4px;">` +
+          `<span style="background:${validationColor}20;color:${validationColor};padding:2px 8px;border-radius:10px;font-weight:600;font-size:11px;">${validation}</span>` +
+          ` &middot; ${escapeHtml(user)}` +
+        `</div>` +
+        `${surface != null ? `<div style="font-size:12px;color:#475569;">Surface: ${escapeHtml(String(surface))} m2</div>` : ''}` +
+        `${budget != null ? `<div style="font-size:12px;color:#475569;">Budget: ${escapeHtml(String(budget))} DA</div>` : ''}` +
+        `<p style="margin:6px 0 0;font-size:13px;color:#334155;line-height:1.4;">${escapeHtml(s.description)}</p>` +
         `${photosHtml}` +
-        `<br/><em>${escapeHtml(s.description)}</em>`,
+      `</div>`,
+      { maxWidth: 280 },
     );
 
     // Popup on hover (desktop); click still works.
@@ -421,7 +496,7 @@ async function centerOnMyPosition() {
       setDraftLocation(lat, lng);
     }
   } catch (e) {
-    showError(e instanceof Error ? e.message : 'Géolocalisation indisponible');
+    showError(e instanceof Error ? e.message : 'Geolocalisation indisponible');
   }
 }
 
@@ -453,12 +528,11 @@ async function submit() {
       budget,
       photos,
     });
-    if (!res.success) return showError(res.message || 'Création impossible');
+    if (!res.success) return showError(res.message || 'Creation impossible');
 
     console.log('[UI] Signalement created successfully', { id: res.id });
-    showSuccess(`Signalement créé ! (ID: ${res.id.substring(0, 8)}...)`);
+    showSuccess(`Signalement cree ! (ID: ${res.id.substring(0, 8)}...)`);
 
-    // Keep refresh for consistency; realtime subscription should also update the list.
     await refresh();
     creating.value = false;
     clearDraft();
@@ -468,12 +542,11 @@ async function submit() {
 }
 
 function trySubmit() {
-  if (!creating.value) return showError('Active le formulaire en appuyant sur "Nouveau signalement".');
+  if (!creating.value) return showError('Active le formulaire en appuyant sur Nouveau signalement.');
   if (!firebaseUid.value) return showError('Veuillez vous connecter.');
   if (draft.lat == null || draft.lng == null) return showError('Position requise (toucher la carte).');
   if (draft.description.trim().length < 4) return showError('Description trop courte.');
 
-  // All validations passed -> perform submit
   void submit();
 }
 
@@ -485,7 +558,7 @@ async function takePhoto() {
       resultType: CameraResultType.DataUrl,
       source: CameraSource.Camera,
     });
-    
+
     if (image.dataUrl) {
       const compressed = await compressImage(image.dataUrl, { maxSize: 800, quality: 0.5 });
       draft.photos.push(compressed);
@@ -505,7 +578,7 @@ async function choosePhoto() {
       resultType: CameraResultType.DataUrl,
       source: CameraSource.Photos,
     });
-    
+
     if (image.dataUrl) {
       const compressed = await compressImage(image.dataUrl, { maxSize: 800, quality: 0.5 });
       draft.photos.push(compressed);
@@ -534,7 +607,6 @@ onMounted(async () => {
   const user = await waitForAuthReady();
   if (!user) return void (await router.replace('/login'));
 
-  // Realtime updates (shows new docs immediately, and surfaces permission errors).
   unsubscribeSignalements = subscribeFirebaseSignalements(
     (items) => {
       signalements.value = items;
@@ -564,38 +636,313 @@ watch(
 </script>
 
 <style scoped>
-.map {
-  width: 100%;
-  height: 55vh;
-  border-radius: 12px;
-  overflow: hidden;
-  margin-top: 12px;
+.toolbar-icon {
+  font-size: 22px;
+  color: #f59e0b;
+  margin-left: 16px;
 }
 
-.actions {
+.refresh-btn {
+  --color: rgba(255, 255, 255, 0.8);
+  font-size: 20px;
+}
+
+.page-content {
+  padding: 12px 16px 24px;
+}
+
+/* ===== Stats Row ===== */
+.stats-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
+  margin-bottom: 16px;
 }
 
-.metric {
-  font-size: 28px;
-  font-weight: 700;
+.stat-card {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 12px;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.stat-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-icon-wrap ion-icon {
+  font-size: 20px;
+}
+
+.stat-total .stat-icon-wrap {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.stat-pending .stat-icon-wrap {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.stat-approved .stat-icon-wrap {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1e293b;
   line-height: 1;
 }
 
+.stat-label {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-top: 2px;
+}
+
+/* ===== Filter Bar ===== */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  padding: 12px 16px;
+  border-radius: 14px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+}
+
+.filter-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.filter-label ion-icon {
+  font-size: 18px;
+  color: #94a3b8;
+}
+
+/* ===== Map Container ===== */
+.map-container {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  margin-bottom: 16px;
+}
+
+.map {
+  width: 100%;
+  height: 55vh;
+}
+
+.map-fab-group {
+  position: absolute;
+  right: 12px;
+  bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 1000;
+}
+
+.map-fab {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  border: none;
+  background: #ffffff;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.map-fab:active {
+  transform: scale(0.92);
+}
+
+.map-fab ion-icon {
+  font-size: 22px;
+  color: #1e3a5f;
+}
+
+.fab-create {
+  background: #1e3a5f;
+}
+
+.fab-create ion-icon {
+  color: #ffffff;
+}
+
+.fab-create.active {
+  background: #ef4444;
+}
+
+/* ===== Instruction Banner ===== */
+.instruction-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 14px;
+  margin-bottom: 16px;
+  color: #1e40af;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.instruction-banner ion-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+/* ===== Create Card ===== */
+.create-card {
+  border-radius: 20px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06) !important;
+  margin: 0 !important;
+}
+
+.card-header-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card-header-icon {
+  font-size: 22px;
+  color: #1e3a5f;
+}
+
+/* ===== Form Fields ===== */
+.form-field {
+  margin-bottom: 16px;
+}
+
+.field-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 8px;
+}
+
+.field-label ion-icon {
+  font-size: 16px;
+  color: #94a3b8;
+}
+
+.form-input {
+  --background: #f1f5f9;
+  --border-radius: 12px;
+  --padding-start: 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  transition: border-color 0.2s;
+}
+
+.form-input:focus-within {
+  border-color: #1e3a5f;
+}
+
+.position-display {
+  background: #f1f5f9;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  border: 1.5px solid #e2e8f0;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+.placeholder-text {
+  color: #94a3b8;
+  font-weight: 400;
+  font-family: inherit;
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+/* ===== Photo Actions ===== */
 .photo-actions {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.photo-btn {
+  display: flex;
   align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: none;
+  background: #1e3a5f;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.photo-btn:active {
+  transform: scale(0.96);
+}
+
+.photo-btn ion-icon {
+  font-size: 18px;
+}
+
+.photo-btn-outline {
+  background: transparent;
+  color: #1e3a5f;
+  border: 2px solid #1e3a5f;
 }
 
 .photos-preview {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  padding: 12px 0;
+  gap: 10px;
+  margin-top: 12px;
 }
 
 .photo-item {
@@ -604,16 +951,43 @@ watch(
 }
 
 .photo-item img {
-  max-width: 150px;
-  max-height: 150px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  width: 100px;
+  height: 100px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   object-fit: cover;
 }
 
-.photo-item ion-button {
+.photo-remove {
   position: absolute;
-  top: -8px;
-  right: -8px;
+  top: -6px;
+  right: -6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: white;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.photo-remove ion-icon {
+  font-size: 22px;
+  color: #ef4444;
+}
+
+/* ===== Submit Button ===== */
+.submit-btn {
+  --border-radius: 14px;
+  --background: #1e3a5f;
+  --background-hover: #2d5a8e;
+  margin-top: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  height: 52px;
 }
 </style>
