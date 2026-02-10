@@ -1,1 +1,0 @@
-docker compose -f docker/docker-compose.yml --env-file .env exec -T db-local pg_dump -U signal_user signalements > signalements_backup.sql

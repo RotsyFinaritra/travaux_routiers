@@ -209,6 +209,29 @@ const SignalementDetailsModal: React.FC<{
   );
 };
 
+import "../../styles/validationModal.css";
+
+const DEFAULT_FILTER = "PENDING";
+
+const NIVEAUX_PRIORITE = [
+  { id: 10, label: "Niveau 10", description: "Priorité maximale - Danger immédiat" },
+  { id: 9, label: "Niveau 9", description: "Très urgent - Risque élevé" },
+  { id: 8, label: "Niveau 8", description: "Urgent - À traiter rapidement" },
+  { id: 7, label: "Niveau 7", description: "Important - Priorité élevée" },
+  { id: 6, label: "Niveau 6", description: "Élevé - Priorité importante" },
+  { id: 5, label: "Niveau 5", description: "Normal - Priorité standard" },
+  { id: 4, label: "Niveau 4", description: "Modéré - Peut attendre un peu" },
+  { id: 3, label: "Niveau 3", description: "Faible - Non urgent" },
+  { id: 2, label: "Niveau 2", description: "Très faible - Traitement différé" },
+  { id: 1, label: "Niveau 1", description: "Priorité minimale" },
+];
+
+interface ValidationModalData {
+  signalementId: number;
+  action: "APPROVED" | "REJECTED";
+  description: string;
+}
+
 const ValidationQueue: React.FC = () => {
   const { user } = useAuth();
   const currentUserId = user?.userId ?? null;
@@ -217,11 +240,16 @@ const ValidationQueue: React.FC = () => {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [items, setItems] = React.useState<SignalementDto[]>([]);
-
   const [statusIds, setStatusIds] = React.useState<Record<string, number>>({});
 
   const [selectedSignalement, setSelectedSignalement] = React.useState<SignalementDto | null>(null);
   const [loadingDetails, setLoadingDetails] = React.useState(false);
+  // États pour la modal de validation
+  const [showValidationModal, setShowValidationModal] = React.useState(false);
+  const [validationData, setValidationData] = React.useState<ValidationModalData | null>(null);
+  const [selectedNiveau, setSelectedNiveau] = React.useState(5);
+  const [note, setNote] = React.useState("");
+  const [submitting, setSubmitting] = React.useState(false);
 
   const refresh = React.useCallback(async () => {
     setLoading(true);
@@ -275,31 +303,85 @@ const ValidationQueue: React.FC = () => {
   }
 
   async function onAction(signalementId: number, action: "APPROVED" | "REJECTED") {
+  function onAction(signalementId: number, action: "APPROVED" | "REJECTED") {
     if (!currentUserId) {
       window.alert("Utilisateur courant introuvable. Reconnectez-vous.");
       return;
     }
 
-    const statusId = statusIds[action];
-    if (!statusId) {
-      window.alert(`Statut de validation '${action}' introuvable. Vérifiez les données initiales.`);
+    const signalement = items.find(s => s.id === signalementId);
+    if (!signalement) {
+      window.alert("Signalement introuvable.");
       return;
     }
 
-    const note = window.prompt("Note (optionnel)") ?? "";
-    const resp = await validateSignalement({
+    // Ouvrir la modal de validation
+    setValidationData({
       signalementId,
-      statusId,
-      userId: currentUserId,
-      note: note.trim() ? note.trim() : null,
+      action,
+      description: signalement.description || `Signalement #${signalementId}`,
     });
+    // Pré-sélectionner le niveau actuel s'il existe, sinon 5 par défaut
+    setSelectedNiveau(signalement.niveau || 5);
+    setNote("");
+    setShowValidationModal(true);
+  }
 
-    if (!resp.success) {
-      window.alert(resp.message);
-      return;
+  async function confirmValidation() {
+    if (!validationData || !currentUserId) return;
+
+    setSubmitting(true);
+
+    try {
+      const statusId = statusIds[validationData.action];
+      if (!statusId) {
+        window.alert(`Statut de validation '${validationData.action}' introuvable. Vérifiez les données initiales.`);
+        setSubmitting(false);
+        return;
+      }
+
+      // Construire la note finale (sans le niveau, qui sera envoyé séparément)
+      const finalNote = note.trim() ? note.trim() : null;
+
+      const resp = await validateSignalement({
+        signalementId: validationData.signalementId,
+        statusId,
+        userId: currentUserId,
+        note: finalNote,
+        niveau: validationData.action === "APPROVED" ? selectedNiveau : null,
+      });
+
+      if (!resp.success) {
+        window.alert(`Erreur lors de la validation: ${resp.message}`);
+        setSubmitting(false);
+        return;
+      }
+
+      // Fermer la modal et rafraîchir
+      setShowValidationModal(false);
+      setValidationData(null);
+      setSelectedNiveau(5);
+      setNote("");
+      setSubmitting(false);
+      
+      // Attendre un peu avant de rafraîchir pour que le backend se mette à jour
+      setTimeout(() => {
+        void refresh();
+      }, 500);
+
+    } catch (error) {
+      console.error('Erreur lors de la validation:', error);
+      window.alert('Erreur inattendue lors de la validation. Veuillez réessayer.');
+      setSubmitting(false);
     }
+  }
 
-    void refresh();
+  function closeModal() {
+    if (submitting) return; // Empêcher la fermeture pendant la soumission
+    setShowValidationModal(false);
+    setValidationData(null);
+    setSelectedNiveau(5);
+    setNote("");
   }
 
   return (
@@ -338,6 +420,7 @@ const ValidationQueue: React.FC = () => {
                   <th>ID</th>
                   <th>Description</th>
                   <th>Statut (progression)</th>
+                  <th>Niveau</th>
                   <th>Validation</th>
                   <th>Entreprise</th>
                   <th>Date</th>
@@ -347,19 +430,19 @@ const ValidationQueue: React.FC = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={7} style={{ padding: 20 }}>
+                    <td colSpan={8} style={{ padding: 20 }}>
                       Chargement...
                     </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={7} style={{ padding: 20, color: "#e74c3c" }}>
+                    <td colSpan={8} style={{ padding: 20, color: "#e74c3c" }}>
                       {error}
                     </td>
                   </tr>
                 ) : items.length === 0 ? (
                   <tr>
-                    <td colSpan={7} style={{ padding: 20 }}>
+                    <td colSpan={8} style={{ padding: 20 }}>
                       Aucun signalement.
                     </td>
                   </tr>
@@ -367,11 +450,18 @@ const ValidationQueue: React.FC = () => {
                   items.map((s) => {
                     const vName = s.validation?.status?.name ?? (filter === "PENDING" ? "PENDING" : "-");
                     const dateValue = s.dateSignalement ? new Date(s.dateSignalement).toLocaleString("fr-FR") : "-";
+                    const niveauDisplay = s.niveau ? `Niveau ${s.niveau}` : "-";
                     return (
                       <tr key={s.id}>
                         <td>{s.id}</td>
                         <td>{s.description}</td>
                         <td>{s.status?.name ?? "-"}</td>
+                        <td style={{ 
+                          color: s.niveau ? (s.niveau >= 8 ? "#dc3545" : s.niveau >= 6 ? "#fd7e14" : s.niveau >= 4 ? "#ffc107" : "#28a745") : "#6c757d",
+                          fontWeight: s.niveau ? "600" : "normal"
+                        }}>
+                          {niveauDisplay}
+                        </td>
                         <td>{vName}</td>
                         <td>{s.entreprise?.name ?? "Non attribuée"}</td>
                         <td>{dateValue}</td>
@@ -410,6 +500,105 @@ const ValidationQueue: React.FC = () => {
           signalement={selectedSignalement}
           onClose={() => setSelectedSignalement(null)}
         />
+      {/* Modal de validation avec sélection du niveau */}
+      {showValidationModal && validationData && (
+        <div className="modal-overlay" onClick={submitting ? undefined : closeModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>
+                {validationData.action === "APPROVED" ? "✅ Valider le signalement" : "⛔ Refuser le signalement"}
+              </h3>
+              <button 
+                className="modal-close" 
+                onClick={closeModal}
+                disabled={submitting}
+                style={{ opacity: submitting ? 0.5 : 1 }}
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <div className="validation-info">
+                <h4>Signalement concerné:</h4>
+                <p style={{ backgroundColor: "#f8f9fa", padding: "10px", borderRadius: "4px", margin: "0 0 20px 0" }}>
+                  {validationData.description}
+                </p>
+                {validationData && items.find(s => s.id === validationData.signalementId)?.niveau && (
+                  <div style={{ backgroundColor: "#e3f2fd", padding: "10px", borderRadius: "4px", margin: "0 0 20px 0" }}>
+                    <strong>Niveau actuel:</strong> Niveau {items.find(s => s.id === validationData.signalementId)?.niveau}
+                  </div>
+                )}
+              </div>
+
+              {validationData.action === "APPROVED" && (
+                <div className="niveau-selection">
+                  <h4>Niveau de priorité (1-10):</h4>
+                  <div className="niveau-options">
+                    {NIVEAUX_PRIORITE.map((niveau) => (
+                      <label key={niveau.id} className="niveau-option">
+                        <input
+                          type="radio"
+                          name="niveau"
+                          value={niveau.id}
+                          checked={selectedNiveau === niveau.id}
+                          onChange={(e) => setSelectedNiveau(parseInt(e.target.value))}
+                          disabled={submitting}
+                        />
+                        <div className="niveau-info">
+                          <div className="niveau-label">
+                            <strong>{niveau.id}</strong> - {niveau.label}
+                          </div>
+                          <div className="niveau-description">{niveau.description}</div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="note-section">
+                <h4>Note complémentaire (optionnelle):</h4>
+                <textarea
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="Ajoutez une note explicative si nécessaire..."
+                  rows={3}
+                  className="note-input"
+                  disabled={submitting}
+                />
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button 
+                className="btn btn-secondary" 
+                onClick={closeModal}
+                disabled={submitting}
+              >
+                Annuler
+              </button>
+              <button 
+                className="btn btn-primary"
+                onClick={confirmValidation}
+                disabled={submitting}
+                style={{
+                  backgroundColor: validationData.action === "APPROVED" ? "#28a745" : "#dc3545",
+                  opacity: submitting ? 0.7 : 1
+                }}
+              >
+                {submitting ? (
+                  <span>
+                    <span className="spinner"></span>
+                    {validationData.action === "APPROVED" ? "Validation en cours..." : "Refus en cours..."}
+                  </span>
+                ) : (
+                  validationData.action === "APPROVED" ? "✅ Confirmer la validation" : "⛔ Confirmer le refus"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
