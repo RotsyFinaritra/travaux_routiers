@@ -137,47 +137,125 @@ const StatsRecap: React.FC<StatsRecapProps> = ({
       </div>
 
       {/* Graphiques (optionnels) */}
-      {showCharts && stats && statusStats.length > 0 && (
+      {showCharts && (
         <div className="charts-grid">
           <div className="chart-container">
             <div className="chart-title">Répartition par Statut</div>
-            <canvas id="statusChart"></canvas>
+            {loading ? (
+              <div className="chart-loading">Chargement...</div>
+            ) : (
+              <div className="pie-chart-container">
+                <div className="pie-chart-wrapper">
+                  <svg viewBox="0 0 100 100" className="pie-chart">
+                    {(() => {
+                      const total = countNouveau + countEnCours + countTermine;
+                      if (total === 0) return <circle cx="50" cy="50" r="40" fill="#e1e8ed" />;
+                      
+                      const data = [
+                        { value: countNouveau, color: '#3498db', label: 'Nouveaux' },
+                        { value: countEnCours, color: '#f39c12', label: 'En cours' },
+                        { value: countTermine, color: '#27ae60', label: 'Terminés' },
+                      ];
+                      
+                      let cumulative = 0;
+                      return data.map((item, index) => {
+                        const percentage = (item.value / total) * 100;
+                        const startAngle = cumulative * 3.6;
+                        cumulative += percentage;
+                        const endAngle = cumulative * 3.6;
+                        
+                        if (percentage === 0) return null;
+                        
+                        const startRad = (startAngle - 90) * (Math.PI / 180);
+                        const endRad = (endAngle - 90) * (Math.PI / 180);
+                        
+                        const x1 = 50 + 40 * Math.cos(startRad);
+                        const y1 = 50 + 40 * Math.sin(startRad);
+                        const x2 = 50 + 40 * Math.cos(endRad);
+                        const y2 = 50 + 40 * Math.sin(endRad);
+                        
+                        const largeArc = percentage > 50 ? 1 : 0;
+                        
+                        return (
+                          <path
+                            key={index}
+                            d={`M 50 50 L ${x1} ${y1} A 40 40 0 ${largeArc} 1 ${x2} ${y2} Z`}
+                            fill={item.color}
+                            stroke="#fff"
+                            strokeWidth="0.5"
+                          />
+                        );
+                      });
+                    })()}
+                  </svg>
+                </div>
+                <div className="pie-chart-legend">
+                  <div className="legend-item">
+                    <span className="legend-color" style={{ backgroundColor: '#3498db' }}></span>
+                    <span className="legend-label">Nouveaux</span>
+                    <span className="legend-value">{countNouveau} ({totalPoints > 0 ? ((countNouveau / totalPoints) * 100).toFixed(1) : 0}%)</span>
+                  </div>
+                  <div className="legend-item">
+                    <span className="legend-color" style={{ backgroundColor: '#f39c12' }}></span>
+                    <span className="legend-label">En cours</span>
+                    <span className="legend-value">{countEnCours} ({totalPoints > 0 ? ((countEnCours / totalPoints) * 100).toFixed(1) : 0}%)</span>
+                  </div>
+                  <div className="legend-item">
+                    <span className="legend-color" style={{ backgroundColor: '#27ae60' }}></span>
+                    <span className="legend-label">Terminés</span>
+                    <span className="legend-value">{countTermine} ({totalPoints > 0 ? ((countTermine / totalPoints) * 100).toFixed(1) : 0}%)</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           <div className="chart-container">
             <div className="chart-title">Budget par Statut</div>
-            <canvas id="budgetChart"></canvas>
+            {loading ? (
+              <div className="chart-loading">Chargement...</div>
+            ) : (
+              <div className="bar-chart-container">
+                {(() => {
+                  // Calculer les budgets par statut à partir de statusStats
+                  const budgetData = statusStats.length > 0 
+                    ? statusStats.map(stat => ({
+                        label: stat.statusName,
+                        value: stat.totalBudget,
+                        color: stat.statusName.toLowerCase().includes('nouveau') ? '#3498db' 
+                             : stat.statusName.toLowerCase().includes('cours') ? '#f39c12' 
+                             : '#27ae60'
+                      }))
+                    : [
+                        { label: 'Nouveaux', value: 0, color: '#3498db' },
+                        { label: 'En cours', value: 0, color: '#f39c12' },
+                        { label: 'Terminés', value: 0, color: '#27ae60' },
+                      ];
+                  
+                  const maxBudget = Math.max(...budgetData.map(d => d.value), 1);
+                  
+                  return budgetData.map((item, index) => (
+                    <div key={index} className="bar-item">
+                      <div className="bar-label">{item.label}</div>
+                      <div className="bar-track">
+                        <div 
+                          className="bar-fill" 
+                          style={{ 
+                            width: `${(item.value / maxBudget) * 100}%`,
+                            backgroundColor: item.color 
+                          }}
+                        >
+                          <span className="bar-value">{item.value.toLocaleString()} MGA</span>
+                        </div>
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Tableau détaillé (optionnel) */}
-      {showDetailedTable && stats && statusStats.length > 0 && (
-        <div className="table-container">
-          <div className="table-title">Statistiques Détaillées par Statut</div>
-          <table className="status-stats-table">
-            <thead>
-              <tr>
-                <th>Statut</th>
-                <th>Nombre</th>
-                <th>Pourcentage</th>
-                <th>Surface totale (m²)</th>
-                <th>Budget total (MGA)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {statusStats.map((stat, index) => (
-                <tr key={index}>
-                  <td>{stat.statusName}</td>
-                  <td>{stat.count}</td>
-                  <td>{stat.percentage.toFixed(1)}%</td>
-                  <td>{stat.totalSurface.toLocaleString()}</td>
-                  <td>{stat.totalBudget.toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
     </>
   );
 };
