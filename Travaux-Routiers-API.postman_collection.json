@@ -1,0 +1,1258 @@
+{
+	"info": {
+		"_postman_id": "travaux-routiers-api-collection",
+		"name": "Travaux Routiers API",
+		"description": "Collection Postman pour tester le backend Spring Boot de l'application Travaux Routiers.\n\nVariables :\n- base_url : URL de base du serveur (défaut http://localhost:8080)\n- admin_key : Clé API admin pour les endpoints protégés\n- jwt_token : Token JWT récupéré après login\n- user_id : ID utilisateur pour les tests",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "admin_key",
+			"value": "your-admin-key",
+			"type": "string"
+		},
+		{
+			"key": "jwt_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "user_id",
+			"value": "1",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "🔐 Auth",
+			"description": "Authentification : login, register, profil utilisateur",
+			"item": [
+				{
+					"name": "Register",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.token) {",
+									"        pm.collectionVariables.set('jwt_token', jsonData.token);",
+									"    }",
+									"    if (jsonData.userId) {",
+									"        pm.collectionVariables.set('user_id', jsonData.userId.toString());",
+									"    }",
+									"    pm.test('Register successful', function () {",
+									"        pm.expect(jsonData.success).to.be.true;",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"testuser\",\n    \"email\": \"testuser@example.com\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/register",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "register"]
+						}
+					}
+				},
+				{
+					"name": "Login (password)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.token) {",
+									"        pm.collectionVariables.set('jwt_token', jsonData.token);",
+									"    }",
+									"    if (jsonData.userId) {",
+									"        pm.collectionVariables.set('user_id', jsonData.userId.toString());",
+									"    }",
+									"    pm.test('Login successful', function () {",
+									"        pm.expect(jsonData.success).to.be.true;",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"usernameOrEmail\": \"testuser@example.com\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Login (Firebase idToken)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"idToken\": \"firebase-id-token-here\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Get Current User (JWT)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/auth/me",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "me"]
+						}
+					}
+				},
+				{
+					"name": "Get Current User (X-USER-ID)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-USER-ID",
+								"value": "{{user_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/auth/me",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "me"]
+						}
+					}
+				},
+				{
+					"name": "Get Current User (query param)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/auth/me?userId={{user_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "me"],
+							"query": [
+								{
+									"key": "userId",
+									"value": "{{user_id}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"updated_username\",\n    \"email\": \"updated@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/users/{{user_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "users", "{{user_id}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "👤 Admin",
+			"description": "Endpoints d'administration (nécessitent X-ADMIN-KEY)",
+			"item": [
+				{
+					"name": "Create User (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-ADMIN-KEY",
+								"value": "{{admin_key}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"newmanager\",\n    \"email\": \"manager@example.com\",\n    \"password\": \"securepass123\",\n    \"role\": \"MANAGER\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/users",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "users"]
+						}
+					}
+				},
+				{
+					"name": "Change User Role",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-ADMIN-KEY",
+								"value": "{{admin_key}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"role\": \"MANAGER\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/users/{{user_id}}/role",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "users", "{{user_id}}", "role"]
+						}
+					}
+				},
+				{
+					"name": "Unblock User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-ADMIN-KEY",
+								"value": "{{admin_key}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/users/{{user_id}}/unblock",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "users", "{{user_id}}", "unblock"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "📍 Signalements",
+			"description": "CRUD des signalements de travaux routiers",
+			"item": [
+				{
+					"name": "Get All Signalements",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/signalements",
+							"host": ["{{base_url}}"],
+							"path": ["api", "signalements"]
+						}
+					}
+				},
+				{
+					"name": "Get Signalements by Validation Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/signalements?validationStatus=PENDING",
+							"host": ["{{base_url}}"],
+							"path": ["api", "signalements"],
+							"query": [
+								{
+									"key": "validationStatus",
+									"value": "PENDING"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Pending Validation",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/signalements/pending-validation",
+							"host": ["{{base_url}}"],
+							"path": ["api", "signalements", "pending-validation"]
+						}
+					}
+				},
+				{
+					"name": "Get Signalement by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/signalements/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "signalements", "1"]
+						}
+					}
+				},
+				{
+					"name": "Create Signalement",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.id) {",
+									"        pm.collectionVariables.set('signalement_id', jsonData.id.toString());",
+									"    }",
+									"    pm.test('Signalement created', function () {",
+									"        pm.expect(jsonData.id).to.exist;",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"user\": { \"id\": 1 },\n    \"status\": { \"id\": 1 },\n    \"latitude\": -18.91368,\n    \"longitude\": 47.53613,\n    \"description\": \"Nid de poule sur la route nationale\",\n    \"surfaceArea\": 12.5,\n    \"niveau\": 3\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/signalements",
+							"host": ["{{base_url}}"],
+							"path": ["api", "signalements"]
+						}
+					}
+				},
+				{
+					"name": "Update Signalement",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"user\": { \"id\": 1 },\n    \"status\": { \"id\": 2 },\n    \"latitude\": -18.91400,\n    \"longitude\": 47.53650,\n    \"description\": \"Nid de poule - mise a jour\",\n    \"surfaceArea\": 15.0,\n    \"niveau\": 4\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/signalements/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "signalements", "1"]
+						}
+					}
+				},
+				{
+					"name": "Update Signalement Status (PATCH)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": { \"id\": 2 }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/signalements/1/status",
+							"host": ["{{base_url}}"],
+							"path": ["api", "signalements", "1", "status"]
+						}
+					}
+				},
+				{
+					"name": "Delete Signalement",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/signalements/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "signalements", "1"]
+						}
+					}
+				},
+				{
+					"name": "Reset All Signalements",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{base_url}}/api/signalements/reset-all",
+							"host": ["{{base_url}}"],
+							"path": ["api", "signalements", "reset-all"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "✅ Validation",
+			"description": "Validation des signalements (nécessite X-ADMIN-KEY)",
+			"item": [
+				{
+					"name": "Validate Signalement",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-ADMIN-KEY",
+								"value": "{{admin_key}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"statusId\": 2,\n    \"userId\": 1,\n    \"note\": \"Signalement approuve apres verification\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/signalements/1/validate",
+							"host": ["{{base_url}}"],
+							"path": ["api", "signalements", "1", "validate"]
+						}
+					}
+				},
+				{
+					"name": "Get Validation History",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/signalements/1/validation/history",
+							"host": ["{{base_url}}"],
+							"path": ["api", "signalements", "1", "validation", "history"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "👥 Users",
+			"description": "CRUD des utilisateurs",
+			"item": [
+				{
+					"name": "Get All Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/users",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users"]
+						}
+					}
+				},
+				{
+					"name": "Get User by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/users/{{user_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users", "{{user_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Create User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"newuser\",\n    \"email\": \"newuser@example.com\",\n    \"passwordHash\": \"hashedpassword\",\n    \"typeUser\": { \"id\": 1 }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users"]
+						}
+					}
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"updateduser\",\n    \"email\": \"updated@example.com\",\n    \"passwordHash\": \"newhash\",\n    \"typeUser\": { \"id\": 1 }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/{{user_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users", "{{user_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/users/{{user_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users", "{{user_id}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "🏷️ Type Users",
+			"description": "CRUD des types d'utilisateurs (USER, MANAGER, etc.)",
+			"item": [
+				{
+					"name": "Get All Type Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/type-users",
+							"host": ["{{base_url}}"],
+							"path": ["api", "type-users"]
+						}
+					}
+				},
+				{
+					"name": "Get Type User by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/type-users/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "type-users", "1"]
+						}
+					}
+				},
+				{
+					"name": "Create Type User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"SUPERVISOR\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/type-users",
+							"host": ["{{base_url}}"],
+							"path": ["api", "type-users"]
+						}
+					}
+				},
+				{
+					"name": "Update Type User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"ADMIN\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/type-users/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "type-users", "1"]
+						}
+					}
+				},
+				{
+					"name": "Delete Type User",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/type-users/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "type-users", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "📊 Statuses",
+			"description": "CRUD des statuts généraux",
+			"item": [
+				{
+					"name": "Get All Statuses",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/statuses",
+							"host": ["{{base_url}}"],
+							"path": ["api", "statuses"]
+						}
+					}
+				},
+				{
+					"name": "Get Status by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/statuses/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "statuses", "1"]
+						}
+					}
+				},
+				{
+					"name": "Create Status",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"En attente\",\n    \"description\": \"Signalement en attente de traitement\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/statuses",
+							"host": ["{{base_url}}"],
+							"path": ["api", "statuses"]
+						}
+					}
+				},
+				{
+					"name": "Update Status",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Termine\",\n    \"description\": \"Travaux termines\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/statuses/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "statuses", "1"]
+						}
+					}
+				},
+				{
+					"name": "Delete Status",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/statuses/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "statuses", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "🔍 Validation Statuses",
+			"description": "CRUD des statuts de validation (PENDING, APPROVED, REJECTED)",
+			"item": [
+				{
+					"name": "Get All Validation Statuses",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/validation-statuses",
+							"host": ["{{base_url}}"],
+							"path": ["api", "validation-statuses"]
+						}
+					}
+				},
+				{
+					"name": "Get Validation Status by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/validation-statuses/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "validation-statuses", "1"]
+						}
+					}
+				},
+				{
+					"name": "Create Validation Status",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"APPROVED\",\n    \"description\": \"Signalement approuve\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/validation-statuses",
+							"host": ["{{base_url}}"],
+							"path": ["api", "validation-statuses"]
+						}
+					}
+				},
+				{
+					"name": "Update Validation Status",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"REJECTED\",\n    \"description\": \"Signalement rejete\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/validation-statuses/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "validation-statuses", "1"]
+						}
+					}
+				},
+				{
+					"name": "Delete Validation Status",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/validation-statuses/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "validation-statuses", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "🚦 Signalement Statuses",
+			"description": "CRUD des statuts de signalement",
+			"item": [
+				{
+					"name": "Get All Signalement Statuses",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/signalement-statuses",
+							"host": ["{{base_url}}"],
+							"path": ["api", "signalement-statuses"]
+						}
+					}
+				},
+				{
+					"name": "Get Signalement Status by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/signalement-statuses/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "signalement-statuses", "1"]
+						}
+					}
+				},
+				{
+					"name": "Create Signalement Status",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Nouveau\",\n    \"description\": \"Signalement nouvellement cree\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/signalement-statuses",
+							"host": ["{{base_url}}"],
+							"path": ["api", "signalement-statuses"]
+						}
+					}
+				},
+				{
+					"name": "Update Signalement Status",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"En cours\",\n    \"description\": \"Travaux en cours\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/signalement-statuses/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "signalement-statuses", "1"]
+						}
+					}
+				},
+				{
+					"name": "Delete Signalement Status",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/signalement-statuses/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "signalement-statuses", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "🏢 Entreprises",
+			"description": "CRUD des entreprises de travaux",
+			"item": [
+				{
+					"name": "Get All Entreprises",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/entreprises",
+							"host": ["{{base_url}}"],
+							"path": ["api", "entreprises"]
+						}
+					}
+				},
+				{
+					"name": "Get Entreprise by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/entreprises/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "entreprises", "1"]
+						}
+					}
+				},
+				{
+					"name": "Create Entreprise",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Entreprise BTP Madagascar\",\n    \"address\": \"Lot 123, Antananarivo\",\n    \"phone\": \"+261 34 00 000 00\",\n    \"email\": \"contact@btp-mada.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/entreprises",
+							"host": ["{{base_url}}"],
+							"path": ["api", "entreprises"]
+						}
+					}
+				},
+				{
+					"name": "Update Entreprise",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Entreprise BTP Updated\",\n    \"address\": \"Lot 456, Antananarivo\",\n    \"phone\": \"+261 34 11 111 11\",\n    \"email\": \"new@btp-mada.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/entreprises/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "entreprises", "1"]
+						}
+					}
+				},
+				{
+					"name": "Delete Entreprise",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/entreprises/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "entreprises", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "💰 Prix M2",
+			"description": "Gestion du prix au m² et calcul de budget",
+			"item": [
+				{
+					"name": "Get All Prix M2",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/prix-m2",
+							"host": ["{{base_url}}"],
+							"path": ["api", "prix-m2"]
+						}
+					}
+				},
+				{
+					"name": "Get Current Prix M2",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/prix-m2/current",
+							"host": ["{{base_url}}"],
+							"path": ["api", "prix-m2", "current"]
+						}
+					}
+				},
+				{
+					"name": "Get Prix M2 by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/prix-m2/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "prix-m2", "1"]
+						}
+					}
+				},
+				{
+					"name": "Create Prix M2",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"montant\": 50000.00\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/prix-m2",
+							"host": ["{{base_url}}"],
+							"path": ["api", "prix-m2"]
+						}
+					}
+				},
+				{
+					"name": "Update Prix M2",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"montant\": 55000.00\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/prix-m2/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "prix-m2", "1"]
+						}
+					}
+				},
+				{
+					"name": "Delete Prix M2",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/prix-m2/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "prix-m2", "1"]
+						}
+					}
+				},
+				{
+					"name": "Calculer Budget",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"surfaceArea\": 100,\n    \"niveau\": 3\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/prix-m2/calculer-budget",
+							"host": ["{{base_url}}"],
+							"path": ["api", "prix-m2", "calculer-budget"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "📈 Statistics",
+			"description": "Statistiques globales des travaux routiers",
+			"item": [
+				{
+					"name": "Get Global Statistics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/statistics/global",
+							"host": ["{{base_url}}"],
+							"path": ["api", "statistics", "global"]
+						}
+					}
+				},
+				{
+					"name": "Test Statistics API",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/statistics/test",
+							"host": ["{{base_url}}"],
+							"path": ["api", "statistics", "test"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "🔄 Firebase Sync (Cloud)",
+			"description": "Synchronisation Firebase (profil cloud uniquement, nécessite X-ADMIN-KEY)",
+			"item": [
+				{
+					"name": "Sync Signalements to Firebase",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-ADMIN-KEY",
+								"value": "{{admin_key}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/firebase/sync/signalements",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "firebase", "sync", "signalements"]
+						}
+					}
+				},
+				{
+					"name": "Reverse Sync Signalements from Firebase",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-ADMIN-KEY",
+								"value": "{{admin_key}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/firebase/sync/signalements/reverse",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "firebase", "sync", "signalements", "reverse"]
+						}
+					}
+				},
+				{
+					"name": "Sync Users to Firebase",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-ADMIN-KEY",
+								"value": "{{admin_key}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/firebase/sync/users",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "firebase", "sync", "users"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "🏥 Health Check",
+			"description": "Endpoints Spring Actuator",
+			"item": [
+				{
+					"name": "Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/actuator/health",
+							"host": ["{{base_url}}"],
+							"path": ["actuator", "health"]
+						}
+					}
+				},
+				{
+					"name": "Info",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/actuator/info",
+							"host": ["{{base_url}}"],
+							"path": ["actuator", "info"]
+						}
+					}
+				}
+			]
+		}
+	]
+}
