@@ -575,6 +575,9 @@ function renderMarkers(items: FirebaseSignalement[]) {
   markersLayer.clearLayers();
 
   for (const s of items) {
+
+    console.log(s);
+    
     const color = colorForSignalement(s);
     
     // Utiliser l'icône de pin au lieu du cercle
@@ -590,6 +593,8 @@ function renderMarkers(items: FirebaseSignalement[]) {
     const surface = typeof s.surfaceArea === 'number' && Number.isFinite(s.surfaceArea) ? s.surfaceArea : null;
     const budget = typeof s.budget === 'number' && Number.isFinite(s.budget) ? s.budget : null;
     const photos = Array.isArray(s.photos) && s.photos.length > 0 ? s.photos : null;
+
+    const niveau = typeof s.niveau === 'number' && s.niveau >= 1 && s.niveau <= 10 ? s.niveau : 0;
 
     // Build styled popup
     const validationColor = validation === 'APPROVED' ? '#16a34a' : validation === 'REJECTED' ? '#ef4444' : '#f59e0b';
@@ -616,6 +621,27 @@ function renderMarkers(items: FirebaseSignalement[]) {
         `</div>` +
         `${surface != null ? `<div style="font-size:12px;color:#475569;">Surface: ${escapeHtml(String(surface))} m2</div>` : ''}` +
         `${budget != null ? `<div style="font-size:12px;color:#475569;">Budget: ${escapeHtml(String(budget))} DA</div>` : ''}` +
+
+
+        // Niveau avec barre de progression (1 à 10)
+        `<div style="font-size:12px;color:#475569;margin-top:4px;">Niveau:</div>` +
+        `<div style="
+          background:#e5e7eb;
+          border-radius:6px;
+          overflow:hidden;
+          width:100%;
+          height:12px;
+          margin-top:2px;
+        ">
+          <div style="
+            width:${(niveau / 10) * 100}%;
+            background:#4ade80;
+            height:100%;
+          "></div>
+        </div>` +
+        `<div style="font-size:12px;color:#334155;margin-top:2px;">${niveau} / 10</div>` +
+        // Niveau avec barre de progression (1 à 10)
+
         `<p style="margin:6px 0 0;font-size:13px;color:#334155;line-height:1.4;">${escapeHtml(s.description)}</p>` +
         `${photosHtml}` +
       `</div>`,

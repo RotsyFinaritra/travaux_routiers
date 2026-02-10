@@ -194,6 +194,9 @@ const MapViewer: React.FC = () => {
             const dateLabel = dateValue ? new Date(dateValue).toLocaleString("fr-FR") : "-";
             const budgetLabel = typeof s.budget === "number" ? s.budget.toLocaleString("fr-FR") : "-";
             const surfaceLabel = typeof s.surfaceArea === "number" ? s.surfaceArea.toLocaleString("fr-FR") : "-";
+          
+            // const level = typeof s.niveau === "number" ? s.niveau.toLocaleString("fr-FR") : "-";
+            const level = typeof s.niveau === "number" && s.niveau >= 1 && s.niveau <= 10 ? s.niveau : 0;
 
             return (
               <Marker key={s.id} position={[s.latitude, s.longitude]} icon={icon}>
@@ -209,6 +212,32 @@ const MapViewer: React.FC = () => {
                         <span className="popup-label">✅ Statut:</span>
                         <span className="popup-value">{s.status?.name ?? "-"}</span>
                       </div>
+                      <div className="popup-row">
+                        <span className="popup-label">📊 Niveau:</span>
+                        <div className="popup-value">
+                          <div
+                            style={{
+                              background: '#e5e7eb', // gris clair pour le fond
+                              borderRadius: '6px',
+                              overflow: 'hidden',
+                              width: '100px',
+                              height: '12px',
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: `${(level / 10) * 100}%`, // level de 1 à 10 converti en pourcentage
+                                background: '#4ade80', // vert
+                                height: '100%',
+                              }}
+                            />
+                          </div>
+                          <span style={{ marginLeft: '6px', fontSize: '12px', color: '#334155' }}>
+                            {level} / 10
+                          </span>
+                        </div>
+                      </div>
+
                       <div className="popup-row">
                         <span className="popup-label">📏 Surface:</span>
                         <span className="popup-value">{surfaceLabel} m²</span>
