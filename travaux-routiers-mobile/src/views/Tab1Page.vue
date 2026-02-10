@@ -13,36 +13,96 @@
     <ion-content :fullscreen="true">
       <div class="page-content">
         <!-- Statistics cards -->
-        <div class="stats-row">
-          <div class="stat-card stat-total">
-            <div class="stat-icon-wrap">
-              <ion-icon :icon="layersOutline" />
+        <div class="stats-section">
+          <div class="stats-row">
+            <div class="stat-card stat-total">
+              <div class="stat-icon-wrap">
+                <ion-icon :icon="layersOutline" />
+              </div>
+              <div class="stat-info">
+                <span class="stat-value">{{ recap.total }}</span>
+                <span class="stat-label">Total</span>
+              </div>
             </div>
-            <div class="stat-info">
-              <span class="stat-value">{{ recap.total }}</span>
-              <span class="stat-label">Total</span>
-            </div>
-          </div>
 
-          <div class="stat-card stat-pending">
-            <div class="stat-icon-wrap">
-              <ion-icon :icon="timeOutline" />
-            </div>
-            <div class="stat-info">
-              <span class="stat-value">{{ recap.pending }}</span>
-              <span class="stat-label">En attente</span>
+            <div class="stat-card stat-pending">
+              <div class="stat-icon-wrap">
+                <ion-icon :icon="timeOutline" />
+              </div>
+              <div class="stat-info">
+                <span class="stat-value">{{ recap.pending }}</span>
+                <span class="stat-label">En attente</span>
+              </div>
             </div>
           </div>
+          
+          <div class="stats-row">
+            <div class="stat-card stat-approved">
+              <div class="stat-icon-wrap">
+                <ion-icon :icon="checkmarkCircleOutline" />
+              </div>
+              <div class="stat-info">
+                <span class="stat-value">{{ recap.approved }}</span>
+                <span class="stat-label">Validés</span>
+              </div>
+            </div>
 
-          <div class="stat-card stat-approved">
-            <div class="stat-icon-wrap">
-              <ion-icon :icon="checkmarkCircleOutline" />
-            </div>
-            <div class="stat-info">
-              <span class="stat-value">{{ recap.approved }}</span>
-              <span class="stat-label">Valides</span>
+            <div class="stat-card stat-rejected">
+              <div class="stat-icon-wrap">
+                <ion-icon :icon="closeCircleOutline" />
+              </div>
+              <div class="stat-info">
+                <span class="stat-value">{{ recap.rejected }}</span>
+                <span class="stat-label">Rejetés</span>
+              </div>
             </div>
           </div>
+        </div>
+        
+        <!-- User filter info -->
+        <div v-if="myOnly && firebaseUid" class="user-filter-info">
+          <ion-icon :icon="personOutline" />
+          <span>Affichage : Mes signalements ({{ firebaseUid.substring(0, 8) }}...)</span>
+        </div>
+
+        <!-- Summary Table -->
+        <div class="summary-section">
+          <h3 class="summary-title">
+            <ion-icon :icon="statsChartOutline" />
+            Tableau récapitulatif
+          </h3>
+          <div class="summary-table">
+            <div class="summary-row">
+              <span class="summary-label">Points total</span>
+              <span class="summary-value">{{ summaryData.totalPoints }}</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Surface totale</span>
+              <span class="summary-value">{{ summaryData.totalSurface }} m²</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Avancement</span>
+              <span class="summary-value progress-value">
+                {{ summaryData.progressPercentage }}%
+                <div class="progress-bar">
+                  <div 
+                    class="progress-fill" 
+                    :style="{ width: summaryData.progressPercentage + '%' }"
+                  ></div>
+                </div>
+              </span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Budget total</span>
+              <span class="summary-value budget-value">{{ summaryData.totalBudget }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Auth status -->
+        <div v-if="!firebaseUser" class="auth-warning">
+          <ion-icon :icon="warningOutline" />
+          <span>Connexion en cours... Certaines fonctionnalités sont limitées.</span>
         </div>
 
         <!-- Filter toggle -->
@@ -51,7 +111,12 @@
             <ion-icon :icon="filterOutline" />
             <span>Mes signalements uniquement</span>
           </div>
-          <ion-toggle v-model="myOnly" mode="ios" />
+          <ion-toggle 
+            v-model="myOnly" 
+            mode="ios" 
+            :disabled="!firebaseUser"
+            @click="handleToggleClick"
+          />
         </div>
 
         <!-- Map container -->
@@ -222,6 +287,7 @@ import {
   cashOutline,
   checkmarkCircleOutline,
   closeCircle,
+  closeCircleOutline,
   closeOutline,
   constructOutline,
   createOutline,
@@ -233,10 +299,13 @@ import {
   layersOutline,
   locateOutline,
   locationOutline,
+  personOutline,
   refreshOutline,
   resizeOutline,
   sendOutline,
+  statsChartOutline,
   timeOutline,
+  warningOutline,
 } from 'ionicons/icons';
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 
@@ -280,12 +349,64 @@ const draft = reactive({
 });
 
 const firebaseUid = computed(() => getCurrentFirebaseUser()?.uid ?? null);
+const firebaseUser = computed(() => getCurrentFirebaseUser());
+
+function handleToggleClick() {
+  if (!firebaseUser.value) {
+    myOnly.value = false;
+    showError('Veuillez vous connecter pour filtrer vos signalements');
+    return;
+  }
+  console.log('Toggle activé, uid:', firebaseUid.value);
+}
+
+// Watch pour désactiver le filtre quand l'utilisateur se déconnecte
+watch(firebaseUser, (newUser) => {
+  if (!newUser && myOnly.value) {
+    console.log('Utilisateur déconnecté, désactivation du filtre');
+    myOnly.value = false;
+  }
+});
 
 const visibleSignalements = computed(() => {
   const uid = firebaseUid.value;
-  if (!myOnly.value) return signalements.value;
-  if (!uid) return signalements.value;
-  return signalements.value.filter((s) => s.userUid === uid);
+  const items = signalements.value;
+  
+  console.log('=== Debug filtrage ===');
+  console.log('Tous les signalements:', items.length);
+  console.log('Filtre activé:', myOnly.value);
+  console.log('UID utilisateur:', uid);
+  
+  if (!myOnly.value) {
+    console.log('Affichage de tous les signalements');
+    return items;
+  }
+  
+  if (!uid) {
+    console.log('Pas d\'utilisateur connecté, retour à tous les signalements');
+    return items;
+  }
+  
+  // Debug: afficher les UIDs des signalements
+  if (items.length > 0) {
+    console.log('Exemples d\'UIDs dans les signalements:');
+    items.slice(0, 3).forEach((s, i) => {
+      console.log(`Signalement ${i}:`, s.userUid);
+    });
+  }
+  
+  const filtered = items.filter((s) => {
+    const match = s.userUid === uid;
+    if (!match && items.length < 10) { // Log seulement si peu de signalements
+      console.log(`Signalement exclu: ${s.userUid} !== ${uid}`);
+    }
+    return match;
+  });
+  
+  console.log(`Résultat: ${filtered.length}/${items.length} signalements pour l'utilisateur`);
+  console.log('===================');
+  
+  return filtered;
 });
 
 function showError(message: string) {
@@ -321,6 +442,35 @@ const recap = computed(() => {
   }
 
   return base;
+});
+
+const summaryData = computed(() => {
+  const items = visibleSignalements.value;
+  
+  const totalPoints = items.length;
+  
+  // Calculer la surface totale
+  const totalSurface = items.reduce((sum, s) => {
+    const surface = typeof s.surfaceArea === 'number' && Number.isFinite(s.surfaceArea) ? s.surfaceArea : 0;
+    return sum + surface;
+  }, 0);
+  
+  // Calculer le budget total
+  const totalBudget = items.reduce((sum, s) => {
+    const budget = typeof s.budget === 'number' && Number.isFinite(s.budget) ? s.budget : 0;
+    return sum + budget;
+  }, 0);
+  
+  // Calculer l'avancement en pourcentage (basé sur les signalements approuvés)
+  const approvedCount = items.filter(s => validationNameOf(s) === 'APPROVED').length;
+  const progressPercentage = totalPoints > 0 ? Math.round((approvedCount / totalPoints) * 100) : 0;
+  
+  return {
+    totalPoints,
+    totalSurface: totalSurface.toFixed(1),
+    totalBudget: new Intl.NumberFormat('fr-FR').format(totalBudget),
+    progressPercentage
+  };
 });
 
 const canSubmit = computed(() => {
@@ -673,6 +823,11 @@ watch(
   padding: 12px 16px 24px;
 }
 
+/* ===== Stats Section ===== */
+.stats-section {
+  margin-bottom: 20px;
+}
+
 /* ===== Stats Row ===== */
 .stats-row {
   display: flex;
@@ -720,6 +875,11 @@ watch(
   color: #16a34a;
 }
 
+.stat-rejected .stat-icon-wrap {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
 .stat-info {
   display: flex;
   flex-direction: column;
@@ -765,6 +925,44 @@ watch(
 .filter-label ion-icon {
   font-size: 18px;
   color: #94a3b8;
+}
+
+/* ===== Auth Warning ===== */
+.auth-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #fff7ed;
+  border: 1px solid #fb923c;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ea580c;
+}
+
+.auth-warning ion-icon {
+  font-size: 18px;
+}
+
+/* ===== User Filter Info ===== */
+.user-filter-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #f0f9ff;
+  border: 1px solid #0ea5e9;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0369a1;
+}
+
+.user-filter-info ion-icon {
+  font-size: 18px;
 }
 
 /* ===== Map Container ===== */
@@ -1017,5 +1215,83 @@ watch(
   font-size: 16px;
   font-weight: 700;
   height: 52px;
+}
+
+/* ===== Summary Table ===== */
+.summary-section {
+  margin: 20px 0;
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.summary-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e3a5f;
+}
+
+.summary-title ion-icon {
+  font-size: 22px;
+  color: #4f8ef7;
+}
+
+.summary-table {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f8fafe;
+  border-radius: 12px;
+  border-left: 4px solid #4f8ef7;
+}
+
+.summary-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.summary-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e3a5f;
+}
+
+.progress-value {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.progress-bar {
+  width: 100px;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4f8ef7, #06b6d4);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.budget-value {
+  color: #059669;
 }
 </style>
