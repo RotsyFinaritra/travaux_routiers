@@ -336,9 +336,10 @@ const canSubmit = computed(() => {
 function ensureMap() {
   if (map || !mapEl.value) return;
 
+  // Centrer la carte sur Antananarivo, Madagascar
   map = L.map(mapEl.value, {
     zoomControl: true,
-  }).setView([36.7525, 3.04197], 12);
+  }).setView([-18.8792, 47.5079], 12);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
@@ -375,19 +376,40 @@ function colorForSignalement(s: FirebaseSignalement): string {
   return '#f59e0b';
 }
 
+// Créer une icône SVG de marqueur en forme de pin avec couleur selon le statut
+function createPinIcon(color: string): L.DivIcon {
+  const svgIcon = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="32" height="48">
+      <defs>
+        <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.3"/>
+        </filter>
+      </defs>
+      <path d="M12 0C5.4 0 0 5.4 0 12c0 8.1 12 24 12 24s12-15.9 12-24c0-6.6-5.4-12-12-12z" 
+            fill="${color}" filter="url(#shadow)"/>
+      <circle cx="12" cy="12" r="4" fill="white"/>
+    </svg>
+  `;
+
+  return L.divIcon({
+    html: svgIcon,
+    className: 'custom-pin-icon',
+    iconSize: [32, 48],
+    iconAnchor: [16, 48],
+    popupAnchor: [0, -48],
+  });
+}
+
 function renderMarkers(items: FirebaseSignalement[]) {
   if (!markersLayer) return;
   markersLayer.clearLayers();
 
   for (const s of items) {
     const color = colorForSignalement(s);
-    const m = L.circleMarker([s.latitude, s.longitude], {
-      radius: 8,
-      color,
-      fillColor: color,
-      fillOpacity: 0.75,
-      weight: 2,
-    });
+    
+    // Utiliser l'icône de pin au lieu du cercle
+    const icon = createPinIcon(color);
+    const m = L.marker([s.latitude, s.longitude], { icon });
 
     const status = s.statusName ?? '--';
     const validation = validationNameOf(s);
@@ -757,6 +779,12 @@ watch(
 .map {
   width: 100%;
   height: 55vh;
+}
+
+/* Style pour les icônes de pin personnalisées */
+:deep(.custom-pin-icon) {
+  background: transparent;
+  border: none;
 }
 
 .map-fab-group {
