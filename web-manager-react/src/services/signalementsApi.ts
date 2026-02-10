@@ -17,32 +17,6 @@ export type UpdateSignalementInput = {
   photos?: SignalementPhotoDto[] | null;
 };
 
-export async function updateSignalement(
-  signalementId: number,
-  input: UpdateSignalementInput,
-): Promise<{ success: true; signalement: SignalementDto } | { success: false; message: string }> {
-  try {
-    const signalement = await apiFetch<SignalementDto>(`/signalements/${signalementId}`, {
-      method: "PUT",
-      data: {
-        status: { id: input.statusId },
-        entreprise: input.entrepriseId ? { id: input.entrepriseId } : null,
-        latitude: input.latitude,
-        longitude: input.longitude,
-        description: input.description,
-        surfaceArea: input.surfaceArea ?? null,
-        budget: input.budget ?? null,
-        photos: input.photos && input.photos.length > 0
-          ? input.photos.map(p => ({ photoUrl: p.photoUrl }))
-          : [],
-      },
-    });
-    return { success: true, signalement };
-  } catch (error) {
-    return { success: false, message: messageFromError(error) };
-  }
-}
-
 export type MinimalUserDto = {
   id: number;
   username?: string;
@@ -117,9 +91,7 @@ function messageFromError(error: unknown): string {
   return error instanceof Error ? error.message : "Erreur inconnue";
 }
 
-export async function listSignalements(): Promise<
-  { success: true; signalements: SignalementDto[] } | { success: false; message: string }
-> {
+export async function listSignalements(): Promise<{ success: true; signalements: SignalementDto[] } | { success: false; message: string }> {
   try {
     const signalements = await apiFetch<SignalementDto[]>("/signalements", { method: "GET" });
     return { success: true, signalements };
@@ -129,7 +101,7 @@ export async function listSignalements(): Promise<
 }
 
 export async function listSignalementsByValidationStatus(
-  validationStatus: string,
+  validationStatus: string
 ): Promise<{ success: true; signalements: SignalementDto[] } | { success: false; message: string }> {
   try {
     const encoded = encodeURIComponent(validationStatus);
@@ -140,8 +112,19 @@ export async function listSignalementsByValidationStatus(
   }
 }
 
+export async function getSignalement(
+  signalementId: number
+): Promise<{ success: true; signalement: SignalementDto } | { success: false; message: string }> {
+  try {
+    const signalement = await apiFetch<SignalementDto>(`/signalements/${signalementId}`, { method: "GET" });
+    return { success: true, signalement };
+  } catch (error) {
+    return { success: false, message: messageFromError(error) };
+  }
+}
+
 export async function createSignalement(
-  input: CreateSignalementInput,
+  input: CreateSignalementInput
 ): Promise<{ success: true; signalement: SignalementDto } | { success: false; message: string }> {
   try {
     const signalement = await apiFetch<SignalementDto>("/signalements", {
@@ -166,9 +149,35 @@ export async function createSignalement(
   }
 }
 
+export async function updateSignalement(
+  signalementId: number,
+  input: UpdateSignalementInput
+): Promise<{ success: true; signalement: SignalementDto } | { success: false; message: string }> {
+  try {
+    const signalement = await apiFetch<SignalementDto>(`/signalements/${signalementId}`, {
+      method: "PUT",
+      data: {
+        status: { id: input.statusId },
+        entreprise: input.entrepriseId ? { id: input.entrepriseId } : null,
+        latitude: input.latitude,
+        longitude: input.longitude,
+        description: input.description,
+        surfaceArea: input.surfaceArea ?? null,
+        budget: input.budget ?? null,
+        photos: input.photos && input.photos.length > 0
+          ? input.photos.map(p => ({ photoUrl: p.photoUrl }))
+          : [],
+      },
+    });
+    return { success: true, signalement };
+  } catch (error) {
+    return { success: false, message: messageFromError(error) };
+  }
+}
+
 export async function updateSignalementStatus(
   signalementId: number,
-  statusId: number,
+  statusId: number
 ): Promise<{ success: true; signalement: SignalementDto } | { success: false; message: string }> {
   try {
     const signalement = await apiFetch<SignalementDto>(`/signalements/${signalementId}/status`, {
@@ -184,7 +193,7 @@ export async function updateSignalementStatus(
 }
 
 export async function deleteSignalement(
-  signalementId: number,
+  signalementId: number
 ): Promise<{ success: true } | { success: false; message: string }> {
   try {
     await apiFetch<void>(`/signalements/${signalementId}`, { method: "DELETE" });
