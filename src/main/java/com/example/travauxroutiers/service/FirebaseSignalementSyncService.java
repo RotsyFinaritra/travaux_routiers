@@ -196,6 +196,33 @@ public class FirebaseSignalementSyncService {
         return data;
     }
 
+    /**
+     * Synchronise un seul signalement local vers Firebase.
+     * Utilisé après validation pour pousser immédiatement le budget recalculé.
+     */
+    public void syncSignalementToFirebase(Signalement sig) {
+        try {
+            if (sig.getFirebaseDocId() != null && !sig.getFirebaseDocId().isEmpty()) {
+                DocumentReference docRef = firestore.collection("signalements").document(sig.getFirebaseDocId());
+                DocumentSnapshot doc = docRef.get().get();
+                if (doc.exists()) {
+                    docRef.update(buildFirebaseData(sig)).get();
+                } else {
+                    docRef.set(buildFirebaseData(sig)).get();
+                }
+                logger.info("[FirebaseSync] Signalement {} synced to Firebase (docId: {})", sig.getId(), sig.getFirebaseDocId());
+            } else {
+                DocumentReference docRef = firestore.collection("signalements").document();
+                docRef.set(buildFirebaseData(sig)).get();
+                sig.setFirebaseDocId(docRef.getId());
+                signalementRepository.save(sig);
+                logger.info("[FirebaseSync] Signalement {} created in Firebase (new docId: {})", sig.getId(), sig.getFirebaseDocId());
+            }
+        } catch (Exception e) {
+            logger.warn("[FirebaseSync] Failed to sync signalement {} to Firebase: {}", sig.getId(), e.getMessage());
+        }
+    }
+
     private enum SyncDecision { CREATED, UPDATED, SKIPPED }
 
     private SyncDecision upsertSignalementFromDoc(DocumentSnapshot doc) throws Exception {

@@ -5,6 +5,7 @@ import com.example.travauxroutiers.repository.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -24,6 +25,10 @@ public class ValidationService {
     
     @Autowired(required = false)
     private PushNotificationService pushNotificationService;
+
+    @Lazy
+    @Autowired(required = false)
+    private FirebaseSignalementSyncService firebaseSyncService;
 
     public ValidationService(ValidationRepository validationRepository,
                              ValidationStatusRepository statusRepository,
@@ -113,6 +118,14 @@ public class ValidationService {
                     note
                 );
             }
+        }
+
+        // Sync immédiat vers Firebase pour éviter budget=0 lors de la sync complète
+        if (firebaseSyncService != null) {
+            // Recharger le signalement avec la validation mise à jour
+            Signalement fresh = signalementRepository.findById(signalementId).orElse(s);
+            firebaseSyncService.syncSignalementToFirebase(fresh);
+            logger.info("[ValidationService] Signalement {} synchronisé vers Firebase après validation", signalementId);
         }
 
         return saved;
