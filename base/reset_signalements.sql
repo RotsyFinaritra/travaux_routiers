@@ -4,7 +4,9 @@
 
 -- Supprimer toutes les données liées aux signalements
 DELETE FROM signalement_status;
-DELETE FROM validation;
+DELETE FROM validation_history ;
+DELETE FROM validation ;
+DELETE FROM signalement_photo;
 DELETE FROM signalement;
 
 -- Réinitialiser l'auto-increment
