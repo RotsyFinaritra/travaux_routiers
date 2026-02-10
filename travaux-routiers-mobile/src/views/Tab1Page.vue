@@ -165,7 +165,7 @@
 
               <div v-if="draft.photos.length > 0" class="photos-preview">
                 <div v-for="(photo, index) in draft.photos" :key="index" class="photo-item">
-                  <img :src="photo" alt="Apercu" />
+                  <img :src="photo" alt="Apercu" @click="openLightbox(draft.photos, index)" class="photo-clickable" />
                   <button class="photo-remove" @click="removePhoto(index)">
                     <ion-icon :icon="closeCircle" />
                   </button>
@@ -189,6 +189,14 @@
         :color="toastColor"
         position="top"
         @didDismiss="toastOpen = false"
+      />
+
+      <!-- Photo Lightbox -->
+      <PhotoLightbox
+        :photos="lightboxPhotos"
+        :startIndex="lightboxIndex"
+        :visible="lightboxVisible"
+        @close="lightboxVisible = false"
       />
     </ion-content>
   </ion-page>
@@ -240,6 +248,7 @@ import {
 } from 'ionicons/icons';
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 
+import PhotoLightbox from '@/components/PhotoLightbox.vue';
 import { compressImage, estimateBase64Size, formatSize } from '@/lib/imageCompressor';
 import { L } from '@/lib/leaflet';
 import { getCurrentFirebaseUser, waitForAuthReady } from '@/services/firebaseAuth';
@@ -265,6 +274,17 @@ const creating = ref(false);
 const toastOpen = ref(false);
 const toastMessage = ref('');
 const toastColor = ref<'danger' | 'success'>('danger');
+
+// Lightbox state
+const lightboxVisible = ref(false);
+const lightboxPhotos = ref<string[]>([]);
+const lightboxIndex = ref(0);
+
+function openLightbox(photos: string[], index: number) {
+  lightboxPhotos.value = photos;
+  lightboxIndex.value = index;
+  lightboxVisible.value = true;
+}
 
 const signalements = ref<FirebaseSignalement[]>([]);
 
@@ -426,10 +446,10 @@ function renderMarkers(items: FirebaseSignalement[]) {
     let photosHtml = '';
     if (photos) {
       photosHtml = '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;">' +
-        photos.map((p) =>
-          `<a href="${escapeHtml(p)}" target="_blank" rel="noopener">` +
-          `<img src="${escapeHtml(p)}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:2px solid #e2e8f0;" />` +
-          `</a>`
+        photos.map((p, idx) =>
+          `<img src="${escapeHtml(p)}" data-photo-index="${idx}" data-signalement-id="${escapeHtml(s.id ?? '')}" ` +
+          `class="popup-photo-thumb" ` +
+          `style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:2px solid #e2e8f0;cursor:pointer;transition:transform 0.15s;" />`
         ).join('') +
         '</div>';
     }
@@ -451,6 +471,23 @@ function renderMarkers(items: FirebaseSignalement[]) {
       `</div>`,
       { maxWidth: 280 },
     );
+
+    // When popup opens, attach click handlers to photo thumbnails
+    if (photos) {
+      m.on('popupopen', () => {
+        const popupEl = m.getPopup()?.getElement();
+        if (!popupEl) return;
+        const thumbs = popupEl.querySelectorAll('.popup-photo-thumb');
+        thumbs.forEach((thumb: Element) => {
+          thumb.addEventListener('click', (e: Event) => {
+            e.stopPropagation();
+            e.preventDefault();
+            const idx = parseInt((thumb as HTMLElement).dataset.photoIndex ?? '0', 10);
+            openLightbox(photos!, idx);
+          });
+        });
+      });
+    }
 
     // Popup on hover (desktop); click still works.
     m.on('mouseover', () => m.openPopup());
@@ -984,6 +1021,16 @@ watch(
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   object-fit: cover;
+}
+
+.photo-clickable {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.photo-clickable:active {
+  transform: scale(0.93);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
 .photo-remove {
