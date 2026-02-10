@@ -5,6 +5,7 @@ import { listSignalementsByValidationStatus, getSignalement, type SignalementDto
 import { listValidationStatuses } from "../../services/validationStatusesApi";
 import { validateSignalement } from "../../services/validationsApi";
 import "../../styles/signalementList.css"; // Réutilisez les styles existants pour cohérence
+import "../../styles/validationModal.css";
 
 const DEFAULT_FILTER = "PENDING";
 
@@ -209,10 +210,6 @@ const SignalementDetailsModal: React.FC<{
   );
 };
 
-import "../../styles/validationModal.css";
-
-const DEFAULT_FILTER = "PENDING";
-
 const NIVEAUX_PRIORITE = [
   { id: 10, label: "Niveau 10", description: "Priorité maximale - Danger immédiat" },
   { id: 9, label: "Niveau 9", description: "Très urgent - Risque élevé" },
@@ -302,7 +299,6 @@ const ValidationQueue: React.FC = () => {
     });
   }
 
-  async function onAction(signalementId: number, action: "APPROVED" | "REJECTED") {
   function onAction(signalementId: number, action: "APPROVED" | "REJECTED") {
     if (!currentUserId) {
       window.alert("Utilisateur courant introuvable. Reconnectez-vous.");
@@ -500,6 +496,8 @@ const ValidationQueue: React.FC = () => {
           signalement={selectedSignalement}
           onClose={() => setSelectedSignalement(null)}
         />
+      )}
+
       {/* Modal de validation avec sélection du niveau */}
       {showValidationModal && validationData && (
         <div className="modal-overlay" onClick={submitting ? undefined : closeModal}>
