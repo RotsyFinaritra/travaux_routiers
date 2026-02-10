@@ -1,0 +1,161 @@
+// Travaux Routiers - Database Schema
+// Script pour dbdiagram.io
+// Généré à partir des modèles JPA de l'application
+
+Project travaux_routiers {
+  database_type: 'PostgreSQL'
+  Note: 'Système de gestion des signalements de travaux routiers'
+}
+
+// =============================================
+// TABLES DE RÉFÉRENCE (Lookup Tables)
+// =============================================
+
+Table type_user {
+  id bigint [pk, increment]
+  name varchar(50) [unique, not null, note: 'Ex: admin, manager, user']
+  
+  Note: 'Types d\'utilisateurs du système'
+}
+
+Table status {
+  id bigint [pk, increment]
+  name varchar(50) [unique, not null, note: 'Ex: NOUVEAU, EN_COURS, TERMINE']
+  description text
+  
+  Note: 'Statuts possibles des signalements'
+}
+
+Table validation_status {
+  id bigint [pk, increment]
+  name varchar(50) [unique, not null, note: 'Ex: EN_ATTENTE, APPROUVE, REJETE']
+  description text
+  
+  Note: 'Statuts de validation des signalements'
+}
+
+// =============================================
+// TABLES PRINCIPALES
+// =============================================
+
+Table users {
+  id bigint [pk, increment]
+  username varchar(50) [unique, not null]
+  type_user_id bigint [not null, ref: > type_user.id]
+  email varchar(100) [unique, not null]
+  password_hash varchar(255) [not null]
+  login_attempts int [default: 0]
+  is_blocked boolean [default: false]
+  blocked_at timestamp
+  last_login timestamp
+  
+  Note: 'Utilisateurs du système (admins, managers, citoyens)'
+}
+
+Table entreprise {
+  id bigint [pk, increment]
+  name varchar(100) [unique, not null]
+  address varchar(255) [not null]
+  phone varchar(50)
+  email varchar(100) [unique]
+  
+  Note: 'Entreprises de travaux routiers'
+}
+
+Table signalement {
+  id bigint [pk, increment]
+  user_id bigint [not null, ref: > users.id, note: 'Utilisateur qui a créé le signalement']
+  status_id bigint [not null, ref: > status.id, note: 'Statut actuel']
+  entreprise_id bigint [ref: > entreprise.id, note: 'Entreprise assignée']
+  latitude decimal(10,8) [not null]
+  longitude decimal(11,8) [not null]
+  description text [not null]
+  date_signalement timestamp [default: `now()`]
+  surface_area decimal(10,2) [note: 'Surface en m²']
+  niveau int [note: 'Niveau de gravité']
+  budget decimal(15,2) [note: 'Budget estimé en MGA']
+  firebase_doc_id varchar(64) [unique, note: 'ID Firebase pour sync']
+  user_uid varchar(128) [note: 'UID Firebase de l\'utilisateur']
+  
+  Note: 'Signalements de dégradations routières'
+}
+
+Table signalement_photo {
+  id bigint [pk, increment]
+  signalement_id bigint [not null, ref: > signalement.id]
+  photo_url text [not null, note: 'URL de la photo (Firebase Storage)']
+  uploaded_at timestamp [default: `now()`]
+  
+  Note: 'Photos associées aux signalements'
+}
+
+Table signalement_status {
+  id bigint [pk, increment]
+  signalement_id bigint [not null, ref: > signalement.id]
+  status_id bigint [not null, ref: > status.id]
+  changed_by bigint [ref: > users.id, note: 'Utilisateur qui a changé le statut']
+  date_status timestamp [not null]
+  created_at timestamp
+  updated_at timestamp
+  comment text [note: 'Commentaire sur le changement']
+  
+  Note: 'Historique des changements de statut'
+}
+
+Table validation {
+  id bigint [pk, increment]
+  signalement_id bigint [unique, not null, ref: - signalement.id, note: 'Relation 1-1']
+  validation_status_id bigint [not null, ref: > validation_status.id]
+  validated_by_id bigint [ref: > users.id, note: 'Manager qui a validé']
+  validated_at timestamp
+  note text
+  
+  Note: 'Validation des signalements par les managers'
+}
+
+Table validation_history {
+  id bigint [pk, increment]
+  validation_id bigint [not null, ref: > validation.id]
+  changed_by_id bigint [ref: > users.id]
+  changed_at timestamp [default: `now()`]
+  from_status_id bigint [ref: > validation_status.id, note: 'Ancien statut']
+  to_status_id bigint [ref: > validation_status.id, note: 'Nouveau statut']
+  note text
+  
+  Note: 'Historique des changements de validation'
+}
+
+Table prix_m2 {
+  id bigint [pk, increment]
+  montant decimal(15,2) [not null, note: 'Prix par m² en MGA']
+  date_prix timestamp [not null, default: `now()`]
+  
+  Note: 'Historique des prix au m² pour estimation budget'
+}
+
+// =============================================
+// GROUPES DE TABLES
+// =============================================
+
+TableGroup reference_tables {
+  type_user
+  status
+  validation_status
+}
+
+TableGroup core_tables {
+  users
+  entreprise
+  signalement
+}
+
+TableGroup signalement_details {
+  signalement_photo
+  signalement_status
+  validation
+  validation_history
+}
+
+TableGroup config_tables {
+  prix_m2
+}
