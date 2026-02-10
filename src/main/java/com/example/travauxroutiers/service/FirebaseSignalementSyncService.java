@@ -173,10 +173,12 @@ public class FirebaseSignalementSyncService {
         }
         
         // Envoyer les photos comme un tableau d'URLs
+        // Exclure les data URLs (base64) qui sont trop volumineuses pour Firestore (limite 1 Mo/doc)
         if (sig.getPhotos() != null && !sig.getPhotos().isEmpty()) {
             List<String> photoUrls = sig.getPhotos().stream()
                     .map(SignalementPhoto::getPhotoUrl)
                     .filter(url -> url != null && !url.isBlank())
+                    .filter(url -> !url.startsWith("data:"))
                     .collect(Collectors.toList());
             if (!photoUrls.isEmpty()) {
                 data.put("photos", photoUrls);

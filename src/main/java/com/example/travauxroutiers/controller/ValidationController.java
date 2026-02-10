@@ -4,6 +4,8 @@ import com.example.travauxroutiers.model.Validation;
 import com.example.travauxroutiers.model.ValidationHistory;
 import com.example.travauxroutiers.service.ValidationService;
 import com.example.travauxroutiers.repository.ValidationRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,6 +15,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/signalements")
 public class ValidationController {
+    private static final Logger logger = LoggerFactory.getLogger(ValidationController.class);
+    
     private final ValidationService service;
     private final ValidationRepository validationRepository;
 
@@ -33,10 +37,16 @@ public class ValidationController {
         Number statusIdNum = (Number) body.get("statusId");
         String note = body.getOrDefault("note", "") instanceof String ? (String) body.get("note") : null;
         Number byUser = (Number) body.get("userId");
+        Number niveauNum = (Number) body.get("niveau");
+        Integer niveau = niveauNum != null ? niveauNum.intValue() : null;
+        
+        logger.info("[ValidationController] Validation request for signalement {} - niveau reçu: {}", signalementId, niveau);
+        
         if (statusIdNum == null || byUser == null) return ResponseEntity.badRequest().body(Map.of("message", "missing-fields"));
 
         try {
-            Validation v = service.changeStatus(signalementId, statusIdNum.longValue(), byUser.longValue(), note);
+            Validation v = service.changeStatus(signalementId, statusIdNum.longValue(), byUser.longValue(), note, niveau);
+            logger.info("[ValidationController] Validation success for signalement {} - niveau appliqué: {}", signalementId, niveau);
             return ResponseEntity.ok(v);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(404).body(Map.of("message", e.getMessage()));
