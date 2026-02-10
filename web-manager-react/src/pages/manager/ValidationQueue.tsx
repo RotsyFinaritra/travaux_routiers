@@ -95,7 +95,8 @@ const ValidationQueue: React.FC = () => {
       action,
       description: signalement.description || `Signalement #${signalementId}`,
     });
-    setSelectedNiveau(5);
+    // Pré-sélectionner le niveau actuel s'il existe, sinon 5 par défaut
+    setSelectedNiveau(signalement.niveau || 5);
     setNote("");
     setShowValidationModal(true);
   }
@@ -113,18 +114,15 @@ const ValidationQueue: React.FC = () => {
         return;
       }
 
-      // Construire la note finale avec le niveau de priorité
-      const niveauInfo = NIVEAUX_PRIORITE.find(n => n.id === selectedNiveau);
-      const finalNote = [
-        `Niveau: ${selectedNiveau} (${niveauInfo?.label || 'Niveau ' + selectedNiveau})`,
-        note.trim() ? `Note: ${note.trim()}` : null
-      ].filter(Boolean).join(" | ");
+      // Construire la note finale (sans le niveau, qui sera envoyé séparément)
+      const finalNote = note.trim() ? note.trim() : null;
 
       const resp = await validateSignalement({
         signalementId: validationData.signalementId,
         statusId,
         userId: currentUserId,
-        note: finalNote || null,
+        note: finalNote,
+        niveau: validationData.action === "APPROVED" ? selectedNiveau : null,
       });
 
       if (!resp.success) {
@@ -196,6 +194,7 @@ const ValidationQueue: React.FC = () => {
                   <th>ID</th>
                   <th>Description</th>
                   <th>Statut (progression)</th>
+                  <th>Niveau</th>
                   <th>Validation</th>
                   <th>Entreprise</th>
                   <th>Date</th>
@@ -205,19 +204,19 @@ const ValidationQueue: React.FC = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={7} style={{ padding: 20 }}>
+                    <td colSpan={8} style={{ padding: 20 }}>
                       Chargement...
                     </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={7} style={{ padding: 20, color: "#e74c3c" }}>
+                    <td colSpan={8} style={{ padding: 20, color: "#e74c3c" }}>
                       {error}
                     </td>
                   </tr>
                 ) : items.length === 0 ? (
                   <tr>
-                    <td colSpan={7} style={{ padding: 20 }}>
+                    <td colSpan={8} style={{ padding: 20 }}>
                       Aucun signalement.
                     </td>
                   </tr>
@@ -225,11 +224,18 @@ const ValidationQueue: React.FC = () => {
                   items.map((s) => {
                     const vName = s.validation?.status?.name ?? (filter === "PENDING" ? "PENDING" : "-");
                     const dateValue = s.dateSignalement ? new Date(s.dateSignalement).toLocaleString("fr-FR") : "-";
+                    const niveauDisplay = s.niveau ? `Niveau ${s.niveau}` : "-";
                     return (
                       <tr key={s.id}>
                         <td>{s.id}</td>
                         <td>{s.description}</td>
                         <td>{s.status?.name ?? "-"}</td>
+                        <td style={{ 
+                          color: s.niveau ? (s.niveau >= 8 ? "#dc3545" : s.niveau >= 6 ? "#fd7e14" : s.niveau >= 4 ? "#ffc107" : "#28a745") : "#6c757d",
+                          fontWeight: s.niveau ? "600" : "normal"
+                        }}>
+                          {niveauDisplay}
+                        </td>
                         <td>{vName}</td>
                         <td>{s.entreprise?.name ?? "Non attribuée"}</td>
                         <td>{dateValue}</td>
@@ -277,6 +283,11 @@ const ValidationQueue: React.FC = () => {
                 <p style={{ backgroundColor: "#f8f9fa", padding: "10px", borderRadius: "4px", margin: "0 0 20px 0" }}>
                   {validationData.description}
                 </p>
+                {validationData && items.find(s => s.id === validationData.signalementId)?.niveau && (
+                  <div style={{ backgroundColor: "#e3f2fd", padding: "10px", borderRadius: "4px", margin: "0 0 20px 0" }}>
+                    <strong>Niveau actuel:</strong> Niveau {items.find(s => s.id === validationData.signalementId)?.niveau}
+                  </div>
+                )}
               </div>
 
               {validationData.action === "APPROVED" && (

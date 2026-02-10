@@ -5,6 +5,7 @@ export type ValidateSignalementInput = {
   statusId: number;
   userId: number;
   note?: string | null;
+  niveau?: number | null;
 };
 
 function messageFromError(error: unknown): string {
@@ -44,6 +45,7 @@ export async function validateSignalement(
         statusId: input.statusId,
         userId: input.userId,
         note: input.note ?? null,
+        niveau: input.niveau ?? null,
       },
     });
 
