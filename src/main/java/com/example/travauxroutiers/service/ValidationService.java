@@ -20,6 +20,7 @@ public class ValidationService {
     private final ValidationHistoryRepository historyRepository;
     private final SignalementRepository signalementRepository;
     private final UserRepository userRepository;
+    private final PrixM2Service prixM2Service;
     
     @Autowired(required = false)
     private PushNotificationService pushNotificationService;
@@ -28,12 +29,14 @@ public class ValidationService {
                              ValidationStatusRepository statusRepository,
                              ValidationHistoryRepository historyRepository,
                              SignalementRepository signalementRepository,
-                             UserRepository userRepository) {
+                             UserRepository userRepository,
+                             PrixM2Service prixM2Service) {
         this.validationRepository = validationRepository;
         this.statusRepository = statusRepository;
         this.historyRepository = historyRepository;
         this.signalementRepository = signalementRepository;
         this.userRepository = userRepository;
+        this.prixM2Service = prixM2Service;
     }
 
     public Optional<Validation> getBySignalement(Long signalementId) {
@@ -73,8 +76,13 @@ public class ValidationService {
         if (niveau != null) {
             logger.info("[ValidationService] Mise à jour du niveau: {} -> {}", s.getNiveau(), niveau);
             s.setNiveau(niveau);
+            // Recalculer le budget après mise à jour du niveau
+            if (s.getSurfaceArea() != null) {
+                s.setBudget(prixM2Service.calculerBudget(s.getSurfaceArea(), niveau));
+                logger.info("[ValidationService] Budget recalculé: {}", s.getBudget());
+            }
             Signalement savedSignalement = signalementRepository.save(s);
-            logger.info("[ValidationService] Signalement sauvegardé - nouveau niveau: {}", savedSignalement.getNiveau());
+            logger.info("[ValidationService] Signalement sauvegardé - nouveau niveau: {}, budget: {}", savedSignalement.getNiveau(), savedSignalement.getBudget());
         } else {
             logger.info("[ValidationService] Niveau non fourni (null), pas de mise à jour");
         }
