@@ -185,7 +185,32 @@ input::placeholder {
   font-size: 14px;
   color: #7f8c8d;
 }
+/* Dans login.css */
+.btn-login {
+  background-color: #192f62;
+  color: #e2e8f0;
+  border: 1px solid #334155;
+  padding: 8px 20px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(15, 23, 42, 0.5);
+  background: linear-gradient(145deg, #192f62, #192f62);
+}
 
+.btn-login:hover {
+  background-color: #192f62;
+  background: linear-gradient(145deg, #10224b, #10224b);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(30, 41, 59, 0.6);
+  border-color: #475569;
+  color: #f1f5f9;
+}
 .signup-prompt a {
   display: inline-block;
   padding: 10px 20px;
