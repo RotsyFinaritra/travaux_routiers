@@ -26,6 +26,7 @@ export type FirebaseSignalement = {
   surfaceArea?: number | null;
   budget?: number | null;
   photos?: string[] | null;
+  niveau?: number | null;
   createdAt?: Date | null;
   syncedToLocalAt?: Date | null;
   localId?: number | null;

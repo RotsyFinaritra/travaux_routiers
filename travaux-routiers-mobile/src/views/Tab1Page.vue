@@ -178,7 +178,7 @@
               </ion-item>
             </div>
 
-            <!-- Surface & Budget in row -->
+            <!-- Surface -->
             <div class="form-row">
               <div class="form-field flex-1">
                 <label class="field-label">
@@ -191,21 +191,6 @@
                     type="number"
                     inputmode="decimal"
                     placeholder="Ex: 2.5"
-                  />
-                </ion-item>
-              </div>
-
-              <div class="form-field flex-1">
-                <label class="field-label">
-                  <ion-icon :icon="cashOutline" />
-                  Budget (DA)
-                </label>
-                <ion-item lines="none" class="form-input">
-                  <ion-input
-                    v-model="draft.budgetText"
-                    type="number"
-                    inputmode="decimal"
-                    placeholder="Ex: 15000"
                   />
                 </ion-item>
               </div>
@@ -292,7 +277,6 @@ import {
 import {
   addOutline,
   cameraOutline,
-  cashOutline,
   checkmarkCircleOutline,
   closeCircle,
   closeCircleOutline,
@@ -364,7 +348,6 @@ const draft = reactive({
   lng: null as number | null,
   description: '',
   surfaceAreaText: '',
-  budgetText: '',
   photos: [] as string[],
 });
 
@@ -691,7 +674,6 @@ function clearDraft() {
   draft.lng = null;
   draft.description = '';
   draft.surfaceAreaText = '';
-  draft.budgetText = '';
   draft.photos = [];
   if (draftMarker && map) {
     map.removeLayer(draftMarker);
@@ -750,7 +732,6 @@ async function submit() {
   loading.value = true;
   try {
     const surfaceArea = parseOptionalNumber(draft.surfaceAreaText);
-    const budget = parseOptionalNumber(draft.budgetText);
     const photos = draft.photos.length > 0 ? [...draft.photos] : null;
 
     console.log('[UI] Submitting signalement to Firestore...', { lat: draft.lat, lng: draft.lng, description: draft.description.trim() });
@@ -760,7 +741,6 @@ async function submit() {
       longitude: draft.lng,
       description: draft.description.trim(),
       surfaceArea,
-      budget,
       photos,
     });
     if (!res.success) return showError(res.message || 'Creation impossible');
