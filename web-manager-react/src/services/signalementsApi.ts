@@ -87,6 +87,7 @@ export type SignalementDto = {
   description: string;
   dateSignalement?: string;
   surfaceArea?: number | null;
+  niveau?: number | null;
   budget?: number | null;
   photos?: SignalementPhotoDto[] | null;
 };
