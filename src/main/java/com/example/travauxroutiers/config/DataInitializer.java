@@ -1,8 +1,10 @@
 package com.example.travauxroutiers.config;
 
+import com.example.travauxroutiers.model.PrixM2;
 import com.example.travauxroutiers.model.TypeUser;
 import com.example.travauxroutiers.model.Status;
 import com.example.travauxroutiers.model.ValidationStatus;
+import com.example.travauxroutiers.repository.PrixM2Repository;
 import com.example.travauxroutiers.repository.StatusRepository;
 import com.example.travauxroutiers.repository.ValidationStatusRepository;
 import com.example.travauxroutiers.repository.TypeUserRepository;
@@ -11,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Component
@@ -20,13 +23,16 @@ public class DataInitializer {
     private final TypeUserRepository typeUserRepository;
     private final StatusRepository statusRepository;
     private final ValidationStatusRepository validationStatusRepository;
+    private final PrixM2Repository prixM2Repository;
 
     public DataInitializer(TypeUserRepository typeUserRepository,
                            StatusRepository statusRepository,
-                           ValidationStatusRepository validationStatusRepository) {
+                           ValidationStatusRepository validationStatusRepository,
+                           PrixM2Repository prixM2Repository) {
         this.typeUserRepository = typeUserRepository;
         this.statusRepository = statusRepository;
         this.validationStatusRepository = validationStatusRepository;
+        this.prixM2Repository = prixM2Repository;
     }
 
     @PostConstruct
@@ -83,5 +89,12 @@ public class DataInitializer {
             logger.info("Creating default ValidationStatus: REJECTED");
             return validationStatusRepository.save(vs);
         });
+
+        // Seed default PrixM2 if none exists
+        if (prixM2Repository.count() == 0) {
+            PrixM2 defaultPrix = new PrixM2(new BigDecimal("50000.00"));
+            prixM2Repository.save(defaultPrix);
+            logger.info("Created default PrixM2: {} Ar/m²", defaultPrix.getMontant());
+        }
     }
 }
